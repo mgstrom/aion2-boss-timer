@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>永恒之塔2 BOSS刷新倒计时</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>永恒之塔2 BOSS刷新倒计时</h1>
+        
+        <div class="clock-display">
+            <div class="current-time" id="currentTime">00:00:00</div>
+            <div class="current-date" id="currentDate"></div>
+        </div>
+
+        <!-- 小游戏闹钟 -->
+        <div class="minigame-alarm">
+            <h2>⏰ 每小时小游戏提醒</h2>
+            <div class="alarm-toggle">
+                <label class="switch">
+                    <input type="checkbox" id="minigameToggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" id="toggleLabel">已关闭</span>
+            </div>
+            <p class="alarm-desc">每小时第10分钟提醒您参与小游戏</p>
+            <div id="nextAlarmTime" class="next-alarm-time"></div>
+            <div id="nextEntryCountdown" class="next-entry-countdown"></div>
+        </div>
+
+        <div class="boss-countdown">
+            <h2>BOSS刷新倒计时</h2>
+            <div class="boss-selector">
+                <select id="bossSelect" class="form-control">
+                    <option value="">选择BOSS</option>
+                    <optgroup label="2小时">
+                        <option value="學者拉兀拉">學者拉兀拉 (2小时)</option>
+                        <option value="追擊者塔兀羅">追擊者塔兀羅 (2小时)</option>
+                    </optgroup>
+                    <optgroup label="3小时">
+                        <option value="叛教者雷拉">叛教者雷拉 (3小时)</option>
+                        <option value="收穫管理者莫夏夫">收穫管理者莫夏夫 (3小时)</option>
+                    </optgroup>
+                    <optgroup label="4小时">
+                        <option value="森林戰士烏剌姆">森林戰士烏剌姆 (4小时)</option>
+                        <option value="黑色觸手拉瓦">黑色觸手拉瓦 (4小时)</option>
+                        <option value="百夫長戴米羅斯">百夫長戴米羅斯 (4小时)</option>
+                        <option value="監視兵器克納許">監視兵器克納許 (4小时)</option>
+                    </optgroup>
+                    <optgroup label="6小时">
+                        <option value="神聖的安薩斯">神聖的安薩斯 (6小时)</option>
+                        <option value="研究官塞特蘭">研究官塞特蘭 (6小时)</option>
+                        <option value="幻夢卡西亞">幻夢卡西亞 (6小时)</option>
+                        <option value="沉默塔爾坦">沉默塔爾坦 (6小时)</option>
+                        <option value="靈魂支配者卡沙帕">靈魂支配者卡沙帕 (6小时)</option>
+                    </optgroup>
+                    <optgroup label="12小时">
+                        <option value="軍團長拉格塔">軍團長拉格塔 (12小时)</option>
+                        <option value="永恆卡爾吐亞">永恆卡爾吐亞 (12小时)</option>
+                    </optgroup>
+                </select>
+                <button id="addBossBtn" class="btn btn-primary">添加BOSS</button>
+            </div>
+            <div id="bossesContainer"></div>
+            <p id="noBosses" class="no-alarms">暂无BOSS倒计时</p>
+        </div>
+    </div>
+
+    <!-- 小游戏闹钟弹窗 -->
+    <div id="minigameModal" class="modal">
+        <div class="modal-content minigame-content">
+            <h2>🎮 小游戏时间到了！</h2>
+            <div class="minigame-current-time">
+                当前时间: <span id="minigameCurrentTime">00:00:00</span>
+            </div>
+            <div class="minigame-entry-countdown">
+                最后进场倒计时: <span id="minigameEntryCountdown">03:00</span>
+            </div>
+            <p class="minigame-subtext">请参与小游戏获取奖励</p>
+            <div class="modal-buttons">
+                <button id="stopMinigameAlarmBtn" class="btn btn-primary">停止响铃</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑BOSS弹窗 -->
+    <div id="editBossModal" class="modal">
+        <div class="modal-content">
+            <h2>编辑BOSS</h2>
+            <p id="editBossName"></p>
+            <div class="edit-section">
+                <h3>修改剩余时间</h3>
+                <div class="time-inputs">
+                    <input type="number" id="editHours" min="0" max="23" placeholder="时">
+                    <input type="number" id="editMinutes" min="0" max="59" placeholder="分">
+                    <input type="number" id="editSeconds" min="0" max="59" placeholder="秒">
+                </div>
+            </div>
+            <div class="edit-section">
+                <h3>提前提醒设置</h3>
+                <div class="alert-settings">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="enableAlert" checked>
+                        启用提前提醒
+                    </label>
+                    <div class="alert-time-input">
+                        <label>提前提醒时间（分钟）：</label>
+                        <input type="number" id="alertMinutes" min="1" max="60" value="5">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="saveBossBtn" class="btn btn-primary">保存</button>
+                <button id="cancelEditBtn" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

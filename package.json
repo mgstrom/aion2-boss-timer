@@ -1,0 +1,51 @@
+{
+  "name": "aion2-boss-timer",
+  "version": "1.0.0",
+  "description": "永恒之塔2 BOSS刷新倒计时",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64",
+    "build": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.aion2.boss-timer",
+    "productName": "永恒之塔2 BOSS刷新倒计时",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "永恒之塔2 BOSS刷新倒计时.exe"
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "style.css",
+      "script.js",
+      "package.json"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  }
+}
