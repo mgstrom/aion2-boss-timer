@@ -36,6 +36,7 @@
 
         <div class="boss-countdown">
             <h2>BOSS刷新倒计时</h2>
+            <button id="toggleCustomBossBtn" class="btn btn-secondary custom-boss-toggle">👁️ 自定义BOSS</button>
             <div class="boss-selector">
                 <select id="bossSelect" class="form-control">
                     <option value="">选择BOSS</option>
@@ -118,6 +119,29 @@
             <div class="modal-buttons">
                 <button id="saveBossBtn" class="btn btn-primary">保存</button>
                 <button id="cancelEditBtn" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定义BOSS弹窗 -->
+    <div id="customBossModal" class="modal">
+        <div class="modal-content">
+            <h2>自定义BOSS</h2>
+            <div class="edit-section">
+                <h3>Boss名称</h3>
+                <input type="text" id="customBossName" placeholder="BOSS名称" class="form-control">
+            </div>
+            <div class="edit-section">
+                <h3>倒计时时间</h3>
+                <div class="time-inputs">
+                    <input type="number" id="customBossHours" min="0" max="23" placeholder="时">
+                    <input type="number" id="customBossMinutes" min="0" max="59" placeholder="分">
+                    <input type="number" id="customBossSeconds" min="0" max="59" placeholder="秒">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="addCustomBossBtn" class="btn btn-primary">添加自定义BOSS</button>
+                <button id="cancelCustomBossBtn" class="btn btn-secondary">取消</button>
             </div>
         </div>
     </div>

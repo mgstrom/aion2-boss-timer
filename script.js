@@ -45,6 +45,7 @@ class BossTimerApp {
         this.updateToggleLabel();
         this.setupBackgroundRunning();
         this.initDemoControls();
+        this.initCustomBoss();
     }
 
     setupBackgroundRunning() {
@@ -121,6 +122,9 @@ class BossTimerApp {
 
     setupEventListeners() {
         document.getElementById('addBossBtn').addEventListener('click', () => this.addBoss());
+        document.getElementById('addCustomBossBtn').addEventListener('click', () => this.addCustomBoss());
+        document.getElementById('toggleCustomBossBtn').addEventListener('click', () => this.toggleCustomBossInputs());
+        document.getElementById('cancelCustomBossBtn').addEventListener('click', () => this.closeCustomBossModal());
         document.getElementById('saveBossBtn').addEventListener('click', () => this.saveBossEdit());
         document.getElementById('cancelEditBtn').addEventListener('click', () => this.closeEditModal());
         
@@ -128,6 +132,13 @@ class BossTimerApp {
         document.getElementById('editBossModal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('editBossModal')) {
                 this.closeEditModal();
+            }
+        });
+        
+        // 点击自定义BOSS弹窗外部关闭
+        document.getElementById('customBossModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('customBossModal')) {
+                this.closeCustomBossModal();
             }
         });
         
@@ -159,6 +170,64 @@ class BossTimerApp {
                 this.stopMinigameAlarm();
             }
         });
+    }
+
+    toggleCustomBossInputs() {
+        const modal = document.getElementById('customBossModal');
+        modal.style.display = 'flex';
+    }
+
+    closeCustomBossModal() {
+        const modal = document.getElementById('customBossModal');
+        modal.style.display = 'none';
+        
+        // 清空输入框
+        document.getElementById('customBossName').value = '';
+        document.getElementById('customBossHours').value = '';
+        document.getElementById('customBossMinutes').value = '';
+        document.getElementById('customBossSeconds').value = '';
+    }
+
+    initCustomBoss() {
+        // 初始化自定义BOSS弹窗
+        document.getElementById('customBossModal').style.display = 'none';
+    }
+
+    addCustomBoss() {
+        const bossName = document.getElementById('customBossName').value.trim();
+        const hours = parseInt(document.getElementById('customBossHours').value) || 0;
+        const minutes = parseInt(document.getElementById('customBossMinutes').value) || 0;
+        const seconds = parseInt(document.getElementById('customBossSeconds').value) || 0;
+        
+        if (!bossName) {
+            alert('请输入BOSS名称');
+            return;
+        }
+        
+        if (hours === 0 && minutes === 0 && seconds === 0) {
+            alert('请设置倒计时时间');
+            return;
+        }
+        
+        const respawnTime = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+        
+        const boss = {
+            id: Date.now(),
+            name: bossName,
+            respawnTime: respawnTime,
+            nextSpawn: Date.now() + respawnTime,
+            alertEnabled: true,
+            alertMinutes: 5,
+            justRespawned: false
+        };
+        
+        this.bosses.push(boss);
+        this.saveBosses();
+        this.renderBosses();
+        this.updateBossSelect();
+        
+        // 关闭弹窗并清空输入框
+        this.closeCustomBossModal();
     }
 
     updateCurrentTime() {
@@ -342,7 +411,14 @@ class BossTimerApp {
         const fragment = document.createDocumentFragment();
         
         const now = Date.now();
-        this.bosses.forEach(boss => {
+        // 按剩余时间排序，时间少的排在前面
+        const sortedBosses = [...this.bosses].sort((a, b) => {
+            const timeLeftA = Math.max(0, a.nextSpawn - now);
+            const timeLeftB = Math.max(0, b.nextSpawn - now);
+            return timeLeftA - timeLeftB;
+        });
+        
+        sortedBosses.forEach(boss => {
             const timeLeft = Math.max(0, boss.nextSpawn - now);
             const hours = Math.floor(timeLeft / (1000 * 60 * 60));
             const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
@@ -354,22 +430,29 @@ class BossTimerApp {
             
             const bossElement = document.createElement('div');
             bossElement.className = 'boss-item';
+            const totalTime = boss.respawnTime;
+            const progress = Math.max(0, Math.min(100, (timeLeft / totalTime) * 100));
             bossElement.innerHTML = `
-                <div class="boss-info">
-                    <div class="boss-name">${boss.name} ${alertStatus} ${respawnedMark}</div>
-                    <div class="boss-alert-info">${alertInfo}</div>
+                <div class="boss-item-content">
+                    <div class="boss-info">
+                        <div class="boss-name">${boss.name} ${alertStatus} ${respawnedMark}</div>
+                        <div class="boss-alert-info">${alertInfo}</div>
+                    </div>
+                    <div class="boss-time-left">${timeLeftString}</div>
+                    <div class="boss-actions">
+                        <button class="btn btn-secondary" onclick="app.openEditModal(${boss.id})">
+                            编辑
+                        </button>
+                        <button class="btn btn-secondary" onclick="app.resetBossTimer(${boss.id})">
+                            重置
+                        </button>
+                        <button class="btn btn-danger" onclick="app.deleteBoss(${boss.id})">
+                            删除
+                        </button>
+                    </div>
                 </div>
-                <div class="boss-time-left">${timeLeftString}</div>
-                <div class="boss-actions">
-                    <button class="btn btn-secondary" onclick="app.openEditModal(${boss.id})">
-                        编辑
-                    </button>
-                    <button class="btn btn-secondary" onclick="app.resetBossTimer(${boss.id})">
-                        重置
-                    </button>
-                    <button class="btn btn-danger" onclick="app.deleteBoss(${boss.id})">
-                        删除
-                    </button>
+                <div class="boss-progress">
+                    <div class="boss-progress-bar" style="width: ${progress}%"></div>
                 </div>
             `;
             fragment.appendChild(bossElement);
