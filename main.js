@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, Notification } = require('electron');
 const path = require('path');
 const url = require('url');
 
@@ -15,11 +15,15 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true,
-            enableRemoteModule: false
+            enableRemoteModule: false,
+            // 后台运行配置
+            backgroundThrottling: false
         },
         icon: path.join(__dirname, 'icons', 'icon-512x512.png'),
         frame: true,
-        title: '永恒之塔2 BOSS刷新倒计时'
+        title: '永恒之塔2 BOSS刷新倒计时',
+        // 关闭时最小化到托盘而不是退出
+        show: true
     });
 
     mainWindow.loadURL(url.format({
@@ -27,6 +31,15 @@ function createWindow() {
         protocol: 'file:',
         slashes: true
     }));
+
+    // 关闭按钮最小化到托盘
+    mainWindow.on('close', function (event) {
+        if (!app.isQuiting) {
+            event.preventDefault();
+            mainWindow.hide();
+        }
+        return false;
+    });
 
     mainWindow.on('closed', function () {
         mainWindow = null;
@@ -51,6 +64,7 @@ function createTray() {
         {
             label: '退出',
             click: () => {
+                app.isQuiting = true;
                 app.quit();
             }
         }

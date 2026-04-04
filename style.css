@@ -244,18 +244,53 @@ input:checked ~ .toggle-label {
     border: 2px solid rgba(245, 87, 108, 0.3);
 }
 
+/* 演示按钮容器 */
+.demo-controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
 /* 演示按钮样式 */
 .demo-btn {
-    margin-top: 15px;
     background: linear-gradient(45deg, #f093fb, #f5576c);
     color: white;
     font-size: 0.95rem;
     padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .demo-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+}
+
+/* 隐藏调试按钮 */
+.demo-controls.hidden {
+    display: none;
+}
+
+/* 切换按钮样式 */
+.toggle-demo-btn {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.toggle-demo-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
 /* 小游戏弹窗样式 */

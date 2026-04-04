@@ -37,11 +37,86 @@ class BossTimerApp {
         this.updateCurrentTime();
         setInterval(() => this.updateCurrentTime(), 1000);
         this.renderBosses();
+        this.updateBossSelect();
         this.setupEventListeners();
         this.updateNextAlarmTime();
         this.updateNextEntryCountdown();
         document.getElementById('minigameToggle').checked = this.minigameAlarmEnabled;
         this.updateToggleLabel();
+        this.setupBackgroundRunning();
+        this.initDemoControls();
+    }
+
+    setupBackgroundRunning() {
+        // 使用 Page Visibility API 检测页面是否在前台
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('应用进入后台运行模式');
+                // 在后台时，使用更可靠的检查方式
+                this.startBackgroundCheck();
+            } else {
+                console.log('应用回到前台');
+                this.stopBackgroundCheck();
+            }
+        });
+
+        // 使用 requestAnimationFrame 确保在前台时更新
+        this.keepAlive();
+    }
+
+    startBackgroundCheck() {
+        // 在后台时，使用 setTimeout 而不是 setInterval，更可靠
+        if (this.backgroundCheckInterval) {
+            clearInterval(this.backgroundCheckInterval);
+        }
+        
+        this.backgroundCheckInterval = setInterval(() => {
+            this.updateBossCountdowns();
+            this.checkMinigameAlarm();
+        }, 1000);
+    }
+
+    stopBackgroundCheck() {
+        if (this.backgroundCheckInterval) {
+            clearInterval(this.backgroundCheckInterval);
+            this.backgroundCheckInterval = null;
+        }
+    }
+
+    keepAlive() {
+        // 确保应用保持活跃
+        if (!document.hidden) {
+            requestAnimationFrame(() => this.keepAlive());
+        }
+    }
+
+    toggleDemoControls() {
+        const demoControls = document.querySelector('.demo-controls');
+        const toggleBtn = document.getElementById('toggleDemoBtn');
+        
+        if (demoControls.classList.contains('hidden')) {
+            // 显示调试按钮
+            demoControls.classList.remove('hidden');
+            toggleBtn.textContent = '👁️ 隐藏调试按钮';
+            localStorage.setItem('demoControlsVisible', 'true');
+        } else {
+            // 隐藏调试按钮
+            demoControls.classList.add('hidden');
+            toggleBtn.textContent = '👁️ 显示调试按钮';
+            localStorage.setItem('demoControlsVisible', 'false');
+        }
+    }
+
+    initDemoControls() {
+        // 初始化调试按钮显示状态
+        const isVisible = localStorage.getItem('demoControlsVisible') !== 'false';
+        const demoControls = document.querySelector('.demo-controls');
+        const toggleBtn = document.getElementById('toggleDemoBtn');
+        
+        if (!isVisible) {
+            demoControls.classList.add('hidden');
+            toggleBtn.textContent = '👁️ 显示调试按钮';
+        }
     }
 
     setupEventListeners() {
@@ -54,6 +129,16 @@ class BossTimerApp {
             if (e.target === document.getElementById('editBossModal')) {
                 this.closeEditModal();
             }
+        });
+        
+        // 演示小游戏提醒按钮
+        document.getElementById('demoMinigameBtn').addEventListener('click', () => {
+            this.triggerMinigameAlarm();
+        });
+        
+        // 切换调试按钮显示/隐藏
+        document.getElementById('toggleDemoBtn').addEventListener('click', () => {
+            this.toggleDemoControls();
         });
         
         document.getElementById('minigameToggle').addEventListener('change', (e) => {
@@ -117,6 +202,7 @@ class BossTimerApp {
         this.bosses.push(boss);
         this.saveBosses();
         this.renderBosses();
+        this.updateBossSelect();
         bossSelect.value = '';
     }
 
@@ -129,6 +215,7 @@ class BossTimerApp {
             this.alertTriggered.delete(id);
             this.saveBosses();
             this.renderBosses();
+            this.updateBossSelect();
         }
     }
 
@@ -208,10 +295,11 @@ class BossTimerApp {
         this.bosses.forEach(boss => {
             const timeLeft = boss.nextSpawn - now;
             
-            // 检查是否需要触发提醒
+            // 检查是否需要触发提醒 - 扩大时间窗口到5秒，防止后台节流导致错过
             if (boss.alertEnabled && timeLeft > 0) {
                 const alertTime = boss.nextSpawn - (boss.alertMinutes * 60 * 1000);
-                if (now >= alertTime && now < alertTime + 1000 && !this.alertTriggered.has(boss.id)) {
+                // 使用5秒窗口，并确保只触发一次
+                if (now >= alertTime && now < alertTime + 5000 && !this.alertTriggered.has(boss.id)) {
                     this.notifyBossAlert(boss);
                     this.alertTriggered.add(boss.id);
                 }
@@ -292,6 +380,35 @@ class BossTimerApp {
 
     saveBosses() {
         localStorage.setItem('bosses', JSON.stringify(this.bosses));
+    }
+
+    updateBossSelect() {
+        const bossSelect = document.getElementById('bossSelect');
+        const activeBossNames = new Set(this.bosses.map(boss => boss.name));
+        
+        const bossGroups = {
+            '2小时': this.bossTemplates.filter(b => b.respawnTime === 120 * 60 * 1000),
+            '3小时': this.bossTemplates.filter(b => b.respawnTime === 180 * 60 * 1000),
+            '4小时': this.bossTemplates.filter(b => b.respawnTime === 240 * 60 * 1000),
+            '6小时': this.bossTemplates.filter(b => b.respawnTime === 360 * 60 * 1000),
+            '12小时': this.bossTemplates.filter(b => b.respawnTime === 720 * 60 * 1000)
+        };
+        
+        let html = '<option value="">选择BOSS</option>';
+        
+        for (const [groupName, bosses] of Object.entries(bossGroups)) {
+            const availableBosses = bosses.filter(boss => !activeBossNames.has(boss.name));
+            if (availableBosses.length > 0) {
+                html += `<optgroup label="${groupName}">`;
+                availableBosses.forEach(boss => {
+                    const hours = boss.respawnTime / (60 * 60 * 1000);
+                    html += `<option value="${boss.name}">${boss.name} (${hours}小时)</option>`;
+                });
+                html += '</optgroup>';
+            }
+        }
+        
+        bossSelect.innerHTML = html;
     }
 
     notifyBossAlert(boss) {
@@ -425,6 +542,11 @@ class BossTimerApp {
         
         this.startContinuousAlarm();
         this.startMinigameTimeUpdate();
+        
+        // 10秒后自动关闭弹窗
+        setTimeout(() => {
+            this.stopMinigameAlarm();
+        }, 10000);
     }
 
     startMinigameTimeUpdate() {
