@@ -20,7 +20,8 @@ function createWindow() {
         },
         frame: true,
         title: '永恒之塔2 BOSS刷新倒计时',
-        show: true
+        show: true,
+        alwaysOnTop: false
     });
 
     mainWindow.loadURL(url.format({
@@ -48,6 +49,14 @@ app.on('activate', function () {
     }
 });
 
+// 确保应用能够正常退出
+app.on('before-quit', function () {
+    // 清理所有可能阻止应用退出的资源
+    if (mainWindow) {
+        mainWindow = null;
+    }
+});
+
 ipcMain.on('minimize', () => {
     if (mainWindow) {
         mainWindow.minimize();
@@ -67,5 +76,12 @@ ipcMain.on('maximize', () => {
 ipcMain.on('close', () => {
     if (mainWindow) {
         mainWindow.close();
+    }
+});
+
+ipcMain.on('toggleAlwaysOnTop', (event, isAlwaysOnTop) => {
+    if (mainWindow) {
+        mainWindow.setAlwaysOnTop(isAlwaysOnTop);
+        event.reply('alwaysOnTopToggled', isAlwaysOnTop);
     }
 });

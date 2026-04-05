@@ -46,6 +46,35 @@ class BossTimerApp {
         this.setupBackgroundRunning();
         this.initDemoControls();
         this.initCustomBoss();
+        this.initTopmostToggle();
+    }
+    
+    initTopmostToggle() {
+        // 加载保存的置顶设置
+        const isTopmost = JSON.parse(localStorage.getItem('isTopmost')) || false;
+        document.getElementById('topmostToggle').checked = isTopmost;
+        
+        // 初始化置顶状态
+        if (window.electronAPI) {
+            window.electronAPI.toggleAlwaysOnTop(isTopmost);
+        }
+        
+        // 添加事件监听
+        document.getElementById('topmostToggle').addEventListener('change', (e) => {
+            const isTopmost = e.target.checked;
+            localStorage.setItem('isTopmost', JSON.stringify(isTopmost));
+            if (window.electronAPI) {
+                window.electronAPI.toggleAlwaysOnTop(isTopmost);
+            }
+        });
+        
+        // 监听置顶状态变化
+        if (window.electronAPI) {
+            window.electronAPI.onAlwaysOnTopToggled((isAlwaysOnTop) => {
+                document.getElementById('topmostToggle').checked = isAlwaysOnTop;
+                localStorage.setItem('isTopmost', JSON.stringify(isAlwaysOnTop));
+            });
+        }
     }
 
     setupBackgroundRunning() {

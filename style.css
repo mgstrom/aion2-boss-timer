@@ -1,0 +1,651 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0d1117;
+    min-height: 100vh;
+    color: #e0e0e0;
+    padding: 10px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.clock-display {
+    flex: 1;
+    text-align: center;
+    padding: 20px;
+    background: #161b22;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.current-time {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.current-date {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-bottom: 15px;
+}
+
+/* 置顶开关样式 */
+.topmost-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* 小游戏闹钟样式 */
+.minigame-alarm {
+    flex: 1;
+    max-width: 400px;
+    margin-bottom: 0;
+    padding: 12px;
+    background: #161b22;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    max-height: 200px;
+}
+
+.minigame-alarm h2 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: #f093fb;
+    border-bottom: none;
+    padding-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.alarm-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+/* 开关样式 */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #30363d;
+    transition: .4s;
+    border-radius: 22px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background: #667eea;
+}
+
+input:checked + .slider:before {
+    transform: translateX(18px);
+}
+
+.toggle-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #8b949e;
+}
+
+input:checked ~ .toggle-label {
+    color: #f093fb;
+}
+
+.alarm-desc {
+    font-size: 0.8rem;
+    color: #8b949e;
+    margin-bottom: 8px;
+}
+
+.next-alarm-time {
+    font-size: 0.9rem;
+    color: #f093fb;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+/* 下次进场倒计时样式 */
+.next-entry-countdown {
+    font-size: 1rem;
+    color: #f5576c;
+    margin-bottom: 10px;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px;
+    background: rgba(245, 87, 108, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(245, 87, 108, 0.3);
+}
+
+.boss-countdown {
+    margin-bottom: 10px;
+    padding: 15px;
+    background: #161b22;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+}
+
+.boss-countdown h2 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    color: #ffffff;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 8px;
+}
+
+/* 快速添加BOSS部分样式 */
+.boss-input-section {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #161b22;
+    border-radius: 6px;
+    border-left: 3px solid #f093fb;
+}
+
+.boss-input-section h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: #f093fb;
+}
+
+.boss-input-container {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.boss-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    margin-top: 5px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.boss-suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.boss-suggestion-item:hover {
+    background: rgba(102, 126, 234, 0.2);
+}
+
+.boss-suggestion-item.selected {
+    background: rgba(102, 126, 234, 0.3);
+}
+
+#bossTimeInputs {
+    margin-top: 10px;
+}
+
+#bossTimeInputs .btn {
+    margin-left: 10px;
+    white-space: nowrap;
+}
+
+.boss-selector {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.form-control {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 12px;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #0d1117;
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.custom-boss-toggle {
+    margin-bottom: 15px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.custom-boss-toggle:hover {
+    background: #30363d;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-control option {
+    background: #0d1117;
+    color: #ffffff;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #764ba2;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #21262d;
+    color: #ffffff;
+    border: 1px solid #30363d;
+}
+
+.btn-secondary:hover {
+    background: #30363d;
+}
+
+.btn-danger {
+    background: #f5576c;
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.btn-danger:hover {
+    background: #f093fb;
+    transform: translateY(-1px);
+}
+
+.no-alarms {
+    text-align: center;
+    color: #8b949e;
+    font-style: italic;
+    margin-top: 15px;
+}
+
+/* 演示按钮容器 */
+.demo-controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* 演示按钮样式 */
+.demo-btn {
+    background: #f093fb;
+    color: white;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.demo-btn:hover {
+    background: #f5576c;
+    transform: translateY(-1px);
+}
+
+/* 隐藏调试按钮 */
+.demo-controls.hidden {
+    display: none;
+}
+
+/* 切换按钮样式 */
+.toggle-demo-btn {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    background: #21262d;
+    color: white;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.toggle-demo-btn:hover {
+    background: #30363d;
+    transform: translateY(-1px);
+}
+
+/* 小游戏弹窗样式 */
+.minigame-content {
+    background: #161b22;
+    border: 1px solid #30363d;
+    padding: 30px;
+    border-radius: 8px;
+}
+
+.minigame-content h2 {
+    color: #f093fb;
+    font-size: 1.6rem;
+    border-bottom: none;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.minigame-subtext {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-bottom: 20px;
+}
+
+.minigame-current-time {
+    font-size: 1.1rem;
+    color: #f093fb;
+    margin: 10px 0;
+    font-weight: 600;
+}
+
+.minigame-entry-countdown {
+    font-size: 1.3rem;
+    color: #f5576c;
+    margin: 10px 0;
+    font-weight: 700;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.boss-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #161b22;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    border-left: 4px solid #667eea;
+    gap: 8px;
+    width: 100%;
+}
+
+.boss-item-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 15px;
+}
+
+.boss-info {
+    flex: 1;
+    text-align: left;
+    min-width: 200px;
+    max-width: 400px;
+}
+
+.boss-name {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: visible;
+    color: #ffffff;
+}
+
+.boss-alert-info {
+    font-size: 0.8rem;
+    color: #8b949e;
+    white-space: nowrap;
+}
+
+.boss-time-left {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #f093fb;
+    margin: 0 10px;
+}
+
+/* 进度条样式 */
+.boss-progress {
+    width: 100%;
+    height: 6px;
+    background: #0d1117;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+    border: 1px solid #30363d;
+}
+
+.boss-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #f093fb);
+    border-radius: 3px;
+    transition: width 1s linear;
+}
+
+.boss-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.boss-actions .btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.respawned-mark {
+    color: #f093fb;
+    font-size: 0.9rem;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* 弹窗样式 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #161b22;
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 450px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    border: 1px solid #30363d;
+}
+
+.edit-section {
+    margin: 20px 0;
+    text-align: left;
+}
+
+.edit-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #ffffff;
+}
+
+.time-inputs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.time-inputs input {
+    width: 80px;
+    padding: 10px;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #0d1117;
+    color: #ffffff;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.alert-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    color: #8b949e;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.alert-time-input {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.alert-time-input input {
+    width: 100px;
+    padding: 8px;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #0d1117;
+    color: #ffffff;
+    text-align: center;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .current-time {
+        font-size: 2.5rem;
+    }
+    
+    .boss-selector {
+        flex-direction: column;
+    }
+    
+    .boss-selector select {
+        width: 100%;
+    }
+    
+    .boss-item {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .boss-time-left {
+        margin: 0;
+    }
+}
