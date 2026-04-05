@@ -248,18 +248,47 @@ class BossTimerApp {
     }
     
     parseTimeString(input) {
-        // 匹配"剩餘時間 2小時54分50秒"格式
-        const timeRegex = /剩餘時間\s*(\d+)小時(\d+)分(\d+)秒/;
-        const match = input.match(timeRegex);
+        // 匹配不同格式的时间：
+        // 1. 剩餘時間 2小時54分50秒
+        // 2. 剩餘時間 54分50秒
+        // 3. 剩餘時間 50秒
         
-        if (match) {
+        // 匹配完整格式：剩餘時間 2小時54分50秒
+        const fullTimeRegex = /剩餘時間\s*(\d+)小時(\d+)分(\d+)秒/;
+        const fullMatch = input.match(fullTimeRegex);
+        if (fullMatch) {
             return {
-                fullMatch: match[0],
-                hours: parseInt(match[1]),
-                minutes: parseInt(match[2]),
-                seconds: parseInt(match[3])
+                fullMatch: fullMatch[0],
+                hours: parseInt(fullMatch[1]),
+                minutes: parseInt(fullMatch[2]),
+                seconds: parseInt(fullMatch[3])
             };
         }
+        
+        // 匹配只有分钟和秒的格式：剩餘時間 54分50秒
+        const minSecRegex = /剩餘時間\s*(\d+)分(\d+)秒/;
+        const minSecMatch = input.match(minSecRegex);
+        if (minSecMatch) {
+            return {
+                fullMatch: minSecMatch[0],
+                hours: 0,
+                minutes: parseInt(minSecMatch[1]),
+                seconds: parseInt(minSecMatch[2])
+            };
+        }
+        
+        // 匹配只有秒的格式：剩餘時間 50秒
+        const secRegex = /剩餘時間\s*(\d+)秒/;
+        const secMatch = input.match(secRegex);
+        if (secMatch) {
+            return {
+                fullMatch: secMatch[0],
+                hours: 0,
+                minutes: 0,
+                seconds: parseInt(secMatch[1])
+            };
+        }
+        
         return null;
     }
     
