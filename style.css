@@ -62,6 +62,64 @@ h1 {
     padding-bottom: 8px;
 }
 
+/* 快速添加BOSS部分样式 */
+.boss-input-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid #f093fb;
+}
+
+.boss-input-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #f093fb;
+}
+
+.boss-input-container {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.boss-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(26, 26, 46, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    margin-top: 5px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.boss-suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.boss-suggestion-item:hover {
+    background: rgba(102, 126, 234, 0.2);
+}
+
+.boss-suggestion-item.selected {
+    background: rgba(102, 126, 234, 0.3);
+}
+
+#bossTimeInputs {
+    margin-top: 10px;
+}
+
+#bossTimeInputs .btn {
+    margin-left: 10px;
+    white-space: nowrap;
+}
+
 .boss-selector {
     margin-bottom: 15px;
     display: flex;

@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "永恒之塔2 BOSS刷新倒计时",
   "main": "main.js",
+  "author": "Aion2 Boss Timer",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win --x64",

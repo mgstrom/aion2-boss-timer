@@ -170,6 +170,222 @@ class BossTimerApp {
                 this.stopMinigameAlarm();
             }
         });
+        
+        // 文字输入框事件监听
+        const bossNameInput = document.getElementById('bossNameInput');
+        bossNameInput.addEventListener('input', () => this.handleBossNameInput());
+        bossNameInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                this.hideBossSuggestions();
+            }, 200);
+        });
+        bossNameInput.addEventListener('keydown', (e) => this.handleBossNameKeydown(e));
+        
+        // 添加BOSS按钮事件监听
+        document.getElementById('addBossByNameBtn').addEventListener('click', () => this.addBossByName());
+    }
+    
+    handleBossNameInput() {
+        const input = document.getElementById('bossNameInput');
+        const value = input.value.trim();
+        
+        if (value.length === 0) {
+            this.hideBossSuggestions();
+            document.getElementById('bossTimeInputs').style.display = 'none';
+            return;
+        }
+        
+        // 尝试从输入中解析时间
+        const timeInfo = this.parseTimeString(value);
+        if (timeInfo) {
+            // 如果解析到时间，提取boss名称部分
+            const bossNamePart = value.replace(timeInfo.fullMatch, '').trim();
+            if (bossNamePart) {
+                const suggestions = this.getBossSuggestions(bossNamePart);
+                if (suggestions.length > 0) {
+                    this.showBossSuggestions(suggestions);
+                } else {
+                    this.hideBossSuggestions();
+                }
+            }
+        } else {
+            const suggestions = this.getBossSuggestions(value);
+            if (suggestions.length > 0) {
+                this.showBossSuggestions(suggestions);
+            } else {
+                this.hideBossSuggestions();
+            }
+        }
+    }
+    
+    parseTimeString(input) {
+        // 匹配"剩餘時間 2小時54分50秒"格式
+        const timeRegex = /剩餘時間\s*(\d+)小時(\d+)分(\d+)秒/;
+        const match = input.match(timeRegex);
+        
+        if (match) {
+            return {
+                fullMatch: match[0],
+                hours: parseInt(match[1]),
+                minutes: parseInt(match[2]),
+                seconds: parseInt(match[3])
+            };
+        }
+        return null;
+    }
+    
+    getBossSuggestions(input) {
+        const lowercaseInput = input.toLowerCase();
+        return this.bossTemplates.filter(boss => 
+            boss.name.toLowerCase().includes(lowercaseInput)
+        );
+    }
+    
+    showBossSuggestions(suggestions) {
+        const suggestionsContainer = document.getElementById('bossNameSuggestions');
+        suggestionsContainer.innerHTML = '';
+        
+        const input = document.getElementById('bossNameInput');
+        const value = input.value.trim();
+        const timeInfo = this.parseTimeString(value);
+        
+        suggestions.forEach(boss => {
+            const item = document.createElement('div');
+            item.className = 'boss-suggestion-item';
+            item.textContent = boss.name;
+            item.addEventListener('click', () => {
+                // 如果输入中包含时间信息，直接添加到倒计时列表
+                if (timeInfo) {
+                    this.addBossWithTime(boss.name, timeInfo.hours, timeInfo.minutes, timeInfo.seconds);
+                    // 清空输入框
+                    input.value = '';
+                    this.hideBossSuggestions();
+                } else {
+                    // 没有时间信息，显示时间输入框
+                    document.getElementById('bossNameInput').value = boss.name;
+                    this.hideBossSuggestions();
+                    document.getElementById('bossTimeInputs').style.display = 'flex';
+                }
+            });
+            suggestionsContainer.appendChild(item);
+        });
+        
+        suggestionsContainer.style.display = 'block';
+    }
+    
+    addBossWithTime(bossName, hours, minutes, seconds) {
+        if (!bossName) {
+            alert('请输入BOSS名称');
+            return;
+        }
+        
+        const bossTemplate = this.bossTemplates.find(b => b.name === bossName);
+        if (!bossTemplate) {
+            alert('输入的BOSS名称不在BOSS列表中');
+            return;
+        }
+        
+        const respawnTime = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+        
+        const boss = {
+            id: Date.now(),
+            name: bossName,
+            respawnTime: respawnTime,
+            nextSpawn: Date.now() + respawnTime,
+            alertEnabled: true,
+            alertMinutes: 5,
+            justRespawned: false
+        };
+        
+        this.bosses.push(boss);
+        this.saveBosses();
+        this.renderBosses();
+        this.updateBossSelect();
+    }
+    
+    hideBossSuggestions() {
+        document.getElementById('bossNameSuggestions').style.display = 'none';
+    }
+    
+    handleBossNameKeydown(e) {
+        const suggestionsContainer = document.getElementById('bossNameSuggestions');
+        const suggestionItems = suggestionsContainer.querySelectorAll('.boss-suggestion-item');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const selected = suggestionsContainer.querySelector('.selected');
+            const next = selected ? selected.nextElementSibling : suggestionItems[0];
+            if (next) {
+                if (selected) selected.classList.remove('selected');
+                next.classList.add('selected');
+                next.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const selected = suggestionsContainer.querySelector('.selected');
+            const prev = selected ? selected.previousElementSibling : suggestionItems[suggestionItems.length - 1];
+            if (prev) {
+                if (selected) selected.classList.remove('selected');
+                prev.classList.add('selected');
+                prev.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const selected = suggestionsContainer.querySelector('.selected');
+            if (selected) {
+                selected.click();
+            } else if (suggestionItems.length > 0) {
+                suggestionItems[0].click();
+            }
+        }
+    }
+    
+    addBossByName() {
+        const bossName = document.getElementById('bossNameInput').value.trim();
+        const hours = parseInt(document.getElementById('bossInputHours').value) || 0;
+        const minutes = parseInt(document.getElementById('bossInputMinutes').value) || 0;
+        const seconds = parseInt(document.getElementById('bossInputSeconds').value) || 0;
+        
+        if (!bossName) {
+            alert('请输入BOSS名称');
+            return;
+        }
+        
+        if (hours === 0 && minutes === 0 && seconds === 0) {
+            alert('请设置倒计时时间');
+            return;
+        }
+        
+        const bossTemplate = this.bossTemplates.find(b => b.name === bossName);
+        if (!bossTemplate) {
+            alert('输入的BOSS名称不在BOSS列表中');
+            return;
+        }
+        
+        const respawnTime = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+        
+        const boss = {
+            id: Date.now(),
+            name: bossName,
+            respawnTime: respawnTime,
+            nextSpawn: Date.now() + respawnTime,
+            alertEnabled: true,
+            alertMinutes: 5,
+            justRespawned: false
+        };
+        
+        this.bosses.push(boss);
+        this.saveBosses();
+        this.renderBosses();
+        this.updateBossSelect();
+        
+        // 清空输入框
+        document.getElementById('bossNameInput').value = '';
+        document.getElementById('bossInputHours').value = '';
+        document.getElementById('bossInputMinutes').value = '';
+        document.getElementById('bossInputSeconds').value = '';
+        document.getElementById('bossTimeInputs').style.display = 'none';
+        this.hideBossSuggestions();
     }
 
     toggleCustomBossInputs() {

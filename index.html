@@ -37,6 +37,22 @@
         <div class="boss-countdown">
             <h2>BOSS刷新倒计时</h2>
             <button id="toggleCustomBossBtn" class="btn btn-secondary custom-boss-toggle">👁️ 自定义BOSS</button>
+            
+            <!-- 文字输入框 -->
+            <div class="boss-input-section">
+                <h3>快速添加BOSS</h3>
+                <div class="boss-input-container">
+                    <input type="text" id="bossNameInput" class="form-control" placeholder="输入BOSS名称">
+                    <div id="bossNameSuggestions" class="boss-suggestions"></div>
+                </div>
+                <div class="time-inputs" id="bossTimeInputs" style="display: none;">
+                    <input type="number" id="bossInputHours" min="0" max="23" placeholder="时">
+                    <input type="number" id="bossInputMinutes" min="0" max="59" placeholder="分">
+                    <input type="number" id="bossInputSeconds" min="0" max="59" placeholder="秒">
+                    <button id="addBossByNameBtn" class="btn btn-primary">添加</button>
+                </div>
+            </div>
+            
             <div class="boss-selector">
                 <select id="bossSelect" class="form-control">
                     <option value="">选择BOSS</option>
