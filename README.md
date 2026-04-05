@@ -1,141 +1,106 @@
 # 永恒之塔2 BOSS刷新倒计时
 
-一个用于永恒之塔2游戏的BOSS刷新倒计时工具，支持小游戏闹钟提醒。
+## 项目介绍
+
+永恒之塔2 BOSS刷新倒计时是一个专为永恒之塔2玩家设计的工具，用于跟踪游戏中各种BOSS的刷新时间，并提供小游戏提醒功能。
 
 ## 功能特性
 
-- ✅ BOSS刷新倒计时（15个BOSS）
-- ✅ 小游戏闹钟提醒（每小时第10分钟）
-- ✅ 提前声音提醒
-- ✅ 编辑BOSS时间
-- ✅ 响应式设计
-- ✅ 数据持久化
+- **BOSS刷新倒计时**：支持多种BOSS的刷新时间跟踪
+- **快速添加BOSS**：通过输入BOSS名称和剩余时间快速添加
+- **小游戏提醒**：每小时第10分钟提醒参与小游戏
+- **提前提醒**：可设置BOSS刷新前的提前提醒时间
+- **自定义BOSS**：支持添加自定义BOSS及其刷新时间
+- **后台运行**：支持在后台运行，不会影响其他操作
+- **响应式设计**：适配不同屏幕尺寸
 
-## BOSS列表
+## 安装方法
 
-### 2小时：
-- 學者拉兀拉
-- 追擊者塔兀羅
+### 方法一：使用便携版EXE（推荐）
 
-### 3小时：
-- 叛教者雷拉
-- 收穫管理者莫夏夫
+1. 从 [GitHub Releases](https://github.com/yourusername/aion2-boss-timer/releases) 下载最新的便携版EXE文件
+2. 直接运行下载的EXE文件，无需安装
 
-### 4小时：
-- 森林戰士烏剌姆
-- 黑色觸手拉瓦
-- 百夫長戴米羅斯
-- 監視兵器克納許
+### 方法二：从源码构建
 
-### 6小时：
-- 神聖的安薩斯
-- 研究官塞特蘭
-- 幻夢卡西亞
-- 沉默塔爾坦
-- 靈魂支配者卡沙帕
+1. 克隆仓库：
+   ```bash
+   git clone https://github.com/yourusername/aion2-boss-timer.git
+   cd aion2-boss-timer
+   ```
 
-### 12小时：
-- 軍團長拉格塔
-- 永恆卡爾吐亞
+2. 安装依赖：
+   ```bash
+   npm install
+   ```
+
+3. 构建应用：
+   ```bash
+   npm run build
+   ```
+
+4. 运行应用：
+   ```bash
+   npm start
+   ```
 
 ## 使用方法
 
-### 方法一：直接使用网页版
-1. 下载项目文件
-2. 双击 `index.html` 文件即可使用
-3. 所有功能完整，无需安装
+### 添加BOSS
 
-### 方法二：GitHub Actions自动打包EXE
+1. **通过下拉菜单添加**：
+   - 在 "选择BOSS" 下拉菜单中选择要添加的BOSS
+   - 点击 "添加BOSS" 按钮
 
-#### 1. 上传代码到GitHub
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/你的用户名/你的仓库名.git
-git push -u origin main
-```
+2. **通过快速输入添加**：
+   - 在文本输入框中输入BOSS名称和剩余时间，例如："森林戰士烏剌姆 剩餘時間2小時44分16秒"
+   - 从建议列表中选择正确的BOSS
+   - 系统会自动添加带有指定时间的BOSS
 
-#### 2. 触发构建
-- 每次推送到 `main` 或 `master` 分支时，GitHub Actions会自动构建EXE文件
-- 也可以手动触发：进入GitHub仓库 -> Actions -> Build EXE -> Run workflow
+3. **添加自定义BOSS**：
+   - 点击 "👁️ 自定义BOSS" 按钮
+   - 在弹出的窗口中输入BOSS名称和倒计时时间
+   - 点击 "添加自定义BOSS" 按钮
 
-#### 3. 下载EXE文件
-- 构建完成后，在Actions页面的Artifacts中可以下载EXE文件
-- 或者在Release页面下载（如果创建了tag）
+### 管理BOSS
 
-#### 4. 创建Release（可选）
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-推送tag后，GitHub Actions会自动创建Release并上传EXE文件。
+- **编辑BOSS**：点击BOSS条目旁边的 "编辑" 按钮，可修改剩余时间和提醒设置
+- **重置BOSS**：点击BOSS条目旁边的 "重置" 按钮，可重置BOSS的倒计时
+- **删除BOSS**：点击BOSS条目旁边的 "删除" 按钮，可删除BOSS
 
-### 方法三：本地构建
+### 小游戏提醒
 
-#### 前提条件
-- 安装 [Node.js](https://nodejs.org/) (推荐 LTS 版本)
+- **开启/关闭提醒**：使用 "每小时小游戏提醒" 旁边的开关
+- **查看下次提醒时间**：系统会显示下次小游戏提醒的时间
+- **查看进场倒计时**：系统会显示距离下次小游戏进场截止的倒计时
 
-#### 构建步骤
-```bash
-# 安装依赖
-npm install
+## 支持的BOSS
 
-# 构建EXE
-npm run build
-```
-
-构建完成后，EXE文件位于 `dist` 文件夹中：
-- `永恒之塔2 BOSS刷新倒计时.exe` - 便携版（无需安装）
-- `永恒之塔2 BOSS刷新倒计时 Setup.exe` - 安装版
-
-## 文件说明
-
-- `index.html` - 主页面
-- `style.css` - 样式文件
-- `script.js` - 逻辑文件
-- `main.js` - Electron主进程
-- `preload.js` - Electron预加载脚本
-- `package.json` - 项目配置
-- `.github/workflows/build.yml` - GitHub Actions工作流
+- **2小时刷新**：學者拉兀拉、追擊者塔兀羅
+- **3小时刷新**：叛教者雷拉、收穫管理者莫夏夫
+- **4小时刷新**：森林戰士烏剌姆、黑色觸手拉瓦、百夫長戴米羅斯、監視兵器克納許
+- **6小时刷新**：神聖的安薩斯、研究官塞特蘭、幻夢卡西亞、沉默塔爾坦、靈魂支配者卡沙帕
+- **12小时刷新**：軍團長拉格塔、永恆卡爾吐亞
 
 ## 技术栈
 
-- HTML5/CSS3/JavaScript
-- Electron.js - 桌面应用框架
-- electron-builder - 打包工具
-- GitHub Actions - CI/CD
+- Electron
+- HTML5
+- CSS3
+- JavaScript
 
-## 数据存储
+## 贡献
 
-所有数据保存在浏览器的 localStorage 中，刷新页面后数据不会丢失。
-
-## 常见问题
-
-### 问题：没有声音提醒
-**解决方案**：
-1. 确保浏览器允许通知
-2. 确保浏览器标签页没有被静音
-
-### 问题：数据丢失
-**解决方案**：
-1. 不要清除浏览器缓存
-2. 不要使用隐私模式
-
-### 问题：小游戏闹钟不触发
-**解决方案**：
-1. 确保小游戏闹钟开关已开启
-2. 确保浏览器标签页保持打开状态
+欢迎提交Issue和Pull Request来改进这个项目！
 
 ## 许可证
 
 MIT License
 
-## 作者
+## 联系方式
 
-[你的名字]
+如果您有任何问题或建议，请在GitHub上创建Issue或联系项目维护者。
 
 ---
 
-祝您游戏愉快！
+**注意**：此工具仅用于游戏辅助，不涉及任何游戏修改或作弊行为。

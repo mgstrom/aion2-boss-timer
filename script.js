@@ -234,11 +234,112 @@ class BossTimerApp {
         return null;
     }
     
-    getBossSuggestions(input) {
-        const lowercaseInput = input.toLowerCase();
-        return this.bossTemplates.filter(boss => 
+    // 获取标准化的 BOSS 名称
+    getStandardBossName(input) {
+        const inputStr = input.trim();
+        
+        // 处理相似名称的映射
+        const nameMappings = {
+            // 森林戰士烏剌姆 相关变体
+            '森林戰士烏刺姆': '森林戰士烏剌姆',
+            '森林战士乌刺姆': '森林戰士烏剌姆',
+            '森林战士乌拉姆': '森林戰士烏剌姆',
+            '森林戰士乌拉姆': '森林戰士烏剌姆',
+            
+            // 學者拉兀拉 相关变体
+            '学者拉兀拉': '學者拉兀拉',
+            '学者拉乌拉': '學者拉兀拉',
+            '學者拉乌拉': '學者拉兀拉',
+            
+            // 追擊者塔兀羅 相关变体
+            '追击者塔兀羅': '追擊者塔兀羅',
+            '追击者塔乌罗': '追擊者塔兀羅',
+            '追擊者塔乌罗': '追擊者塔兀羅',
+            
+            // 黑色觸手拉瓦 相关变体
+            '黑色触手拉瓦': '黑色觸手拉瓦',
+            
+            // 叛教者雷拉 相关变体
+            '叛教者雷拉': '叛教者雷拉',
+            '叛教者雷啦': '叛教者雷拉',
+            
+            // 百夫長戴米羅斯 相关变体
+            '百夫长戴米羅斯': '百夫長戴米羅斯',
+            '百夫长戴米罗斯': '百夫長戴米羅斯',
+            '百夫長戴米罗斯': '百夫長戴米羅斯',
+            
+            // 神聖的安薩斯 相关变体
+            '神圣的安薩斯': '神聖的安薩斯',
+            '神圣的安萨斯': '神聖的安薩斯',
+            '神聖的安萨斯': '神聖的安薩斯',
+            
+            // 收穫管理者莫夏夫 相关变体
+            '收获管理者莫夏夫': '收穫管理者莫夏夫',
+            
+            // 監視兵器克納許 相关变体
+            '监视兵器克納許': '監視兵器克納許',
+            '监视兵器克纳什': '監視兵器克納許',
+            '監視兵器克纳什': '監視兵器克納許',
+            
+            // 研究官塞特蘭 相关变体
+            '研究官塞特兰': '研究官塞特蘭',
+            
+            // 幻夢卡西亞 相关变体
+            '幻梦卡西亚': '幻夢卡西亞',
+            
+            // 沉默塔爾坦 相关变体
+            '沉默塔尔坦': '沉默塔爾坦',
+            
+            // 靈魂支配者卡沙帕 相关变体
+            '灵魂支配者卡沙帕': '靈魂支配者卡沙帕',
+            
+            // 軍團長拉格塔 相关变体
+            '军团长拉格塔': '軍團長拉格塔',
+            
+            // 永恆卡爾吐亞 相关变体
+            '永恒卡尔吐亚': '永恆卡爾吐亞',
+            '永恆卡尔吐亚': '永恆卡爾吐亞'
+        };
+        
+        // 检查是否有精确映射
+        if (nameMappings[inputStr]) {
+            return nameMappings[inputStr];
+        }
+        
+        // 模糊匹配：移除所有非中文字符和数字，然后进行匹配
+        const cleanInput = inputStr.replace(/[^\u4e00-\u9fa5\d]/g, '');
+        if (cleanInput) {
+            const matchedBoss = this.bossTemplates.find(boss => {
+                const cleanBossName = boss.name.replace(/[^\u4e00-\u9fa5\d]/g, '');
+                return cleanBossName.includes(cleanInput) || cleanInput.includes(cleanBossName);
+            });
+            if (matchedBoss) {
+                return matchedBoss.name;
+            }
+        }
+        
+        // 常规匹配
+        const lowercaseInput = inputStr.toLowerCase();
+        const matchedBoss = this.bossTemplates.find(boss => 
             boss.name.toLowerCase().includes(lowercaseInput)
         );
+        if (matchedBoss) {
+            return matchedBoss.name;
+        }
+        
+        return null;
+    }
+    
+    getBossSuggestions(input) {
+        const inputStr = input.trim();
+        const standardName = this.getStandardBossName(inputStr);
+        
+        if (standardName) {
+            return this.bossTemplates.filter(boss => boss.name === standardName);
+        }
+        
+        // 如果没有找到标准名称，返回空数组
+        return [];
     }
     
     showBossSuggestions(suggestions) {
@@ -356,7 +457,14 @@ class BossTimerApp {
             return;
         }
         
-        const bossTemplate = this.bossTemplates.find(b => b.name === bossName);
+        // 获取标准化的 BOSS 名称
+        const standardBossName = this.getStandardBossName(bossName);
+        if (!standardBossName) {
+            alert('输入的BOSS名称不在BOSS列表中');
+            return;
+        }
+        
+        const bossTemplate = this.bossTemplates.find(b => b.name === standardBossName);
         if (!bossTemplate) {
             alert('输入的BOSS名称不在BOSS列表中');
             return;
@@ -366,7 +474,7 @@ class BossTimerApp {
         
         const boss = {
             id: Date.now(),
-            name: bossName,
+            name: standardBossName,
             respawnTime: respawnTime,
             nextSpawn: Date.now() + respawnTime,
             alertEnabled: true,
