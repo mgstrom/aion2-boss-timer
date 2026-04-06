@@ -498,6 +498,9 @@ class BossTimerApp {
             existingBoss.nextSpawn = Date.now() + respawnTime;
             existingBoss.justRespawned = false;
             this.alertTriggered.delete(existingBoss.id);
+            
+            // 播放声音提示
+            this.playAlarmSound();
         } else {
             // 添加新的 BOSS
             const boss = {
