@@ -41,6 +41,20 @@ function createWindow() {
         }
     });
 
+    // 当窗口显示时，确保置顶状态正确
+    mainWindow.on('show', function() {
+        if (isAlwaysOnTop) {
+            mainWindow.setAlwaysOnTop(true);
+        }
+    });
+
+    // 当窗口从最小化恢复时，确保置顶状态正确
+    mainWindow.on('restore', function() {
+        if (isAlwaysOnTop) {
+            mainWindow.setAlwaysOnTop(true);
+        }
+    });
+
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'index.html'),
         protocol: 'file:',
