@@ -232,7 +232,12 @@ class BossTimerApp {
             if (bossNamePart) {
                 const suggestions = this.getBossSuggestions(bossNamePart);
                 if (suggestions.length > 0) {
-                    this.showBossSuggestions(suggestions);
+                    // 自动选择第一个建议并添加BOSS
+                    const selectedBoss = suggestions[0];
+                    this.addBossWithTime(selectedBoss.name, timeInfo.hours, timeInfo.minutes, timeInfo.seconds);
+                    // 清空输入框
+                    input.value = '';
+                    this.hideBossSuggestions();
                 } else {
                     this.hideBossSuggestions();
                 }
@@ -252,9 +257,10 @@ class BossTimerApp {
         // 1. 剩餘時間 2小時54分50秒
         // 2. 剩餘時間 54分50秒
         // 3. 剩餘時間 50秒
+        // 4. 剩餘時間 6 小時 10 分 53 秒（带空格）
         
-        // 匹配完整格式：剩餘時間 2小時54分50秒
-        const fullTimeRegex = /剩餘時間\s*(\d+)小時(\d+)分(\d+)秒/;
+        // 匹配完整格式：剩餘時間 2小時54分50秒 或 剩餘時間 6 小時 10 分 53 秒
+        const fullTimeRegex = /剩餘時間\s*(\d+)\s*小時\s*(\d+)\s*分\s*(\d+)\s*秒/;
         const fullMatch = input.match(fullTimeRegex);
         if (fullMatch) {
             return {
@@ -265,8 +271,8 @@ class BossTimerApp {
             };
         }
         
-        // 匹配只有分钟和秒的格式：剩餘時間 54分50秒
-        const minSecRegex = /剩餘時間\s*(\d+)分(\d+)秒/;
+        // 匹配只有分钟和秒的格式：剩餘時間 54分50秒 或 剩餘時間 10 分 53 秒
+        const minSecRegex = /剩餘時間\s*(\d+)\s*分\s*(\d+)\s*秒/;
         const minSecMatch = input.match(minSecRegex);
         if (minSecMatch) {
             return {
@@ -277,8 +283,8 @@ class BossTimerApp {
             };
         }
         
-        // 匹配只有秒的格式：剩餘時間 50秒
-        const secRegex = /剩餘時間\s*(\d+)秒/;
+        // 匹配只有秒的格式：剩餘時間 50秒 或 剩餘時間 53 秒
+        const secRegex = /剩餘時間\s*(\d+)\s*秒/;
         const secMatch = input.match(secRegex);
         if (secMatch) {
             return {
@@ -303,60 +309,89 @@ class BossTimerApp {
             '森林战士乌刺姆': '森林戰士烏剌姆',
             '森林战士乌拉姆': '森林戰士烏剌姆',
             '森林戰士乌拉姆': '森林戰士烏剌姆',
+            '森林战士烏剌姆': '森林戰士烏剌姆',
+            '森林戰士乌剌姆': '森林戰士烏剌姆',
             
             // 學者拉兀拉 相关变体
             '学者拉兀拉': '學者拉兀拉',
             '学者拉乌拉': '學者拉兀拉',
             '學者拉乌拉': '學者拉兀拉',
+            '学者拉兀拉': '學者拉兀拉',
+            '學者拉兀拉': '學者拉兀拉',
             
             // 追擊者塔兀羅 相关变体
             '追击者塔兀羅': '追擊者塔兀羅',
             '追击者塔乌罗': '追擊者塔兀羅',
             '追擊者塔乌罗': '追擊者塔兀羅',
+            '追击者塔兀羅': '追擊者塔兀羅',
+            '追擊者塔兀罗': '追擊者塔兀羅',
             
             // 黑色觸手拉瓦 相关变体
+            '黑色触手拉瓦': '黑色觸手拉瓦',
+            '黑色觸手拉瓦': '黑色觸手拉瓦',
             '黑色触手拉瓦': '黑色觸手拉瓦',
             
             // 叛教者雷拉 相关变体
             '叛教者雷拉': '叛教者雷拉',
             '叛教者雷啦': '叛教者雷拉',
+            '叛教者雷拉': '叛教者雷拉',
             
             // 百夫長戴米羅斯 相关变体
             '百夫长戴米羅斯': '百夫長戴米羅斯',
             '百夫长戴米罗斯': '百夫長戴米羅斯',
             '百夫長戴米罗斯': '百夫長戴米羅斯',
+            '百夫长戴米羅斯': '百夫長戴米羅斯',
+            '百夫長戴米羅斯': '百夫長戴米羅斯',
             
             // 神聖的安薩斯 相关变体
             '神圣的安薩斯': '神聖的安薩斯',
             '神圣的安萨斯': '神聖的安薩斯',
             '神聖的安萨斯': '神聖的安薩斯',
+            '神圣的安薩斯': '神聖的安薩斯',
+            '神聖的安薩斯': '神聖的安薩斯',
             
             // 收穫管理者莫夏夫 相关变体
+            '收获管理者莫夏夫': '收穫管理者莫夏夫',
+            '收穫管理者莫夏夫': '收穫管理者莫夏夫',
             '收获管理者莫夏夫': '收穫管理者莫夏夫',
             
             // 監視兵器克納許 相关变体
             '监视兵器克納許': '監視兵器克納許',
             '监视兵器克纳什': '監視兵器克納許',
             '監視兵器克纳什': '監視兵器克納許',
+            '监视兵器克納許': '監視兵器克納許',
+            '監視兵器克納許': '監視兵器克納許',
             
             // 研究官塞特蘭 相关变体
+            '研究官塞特兰': '研究官塞特蘭',
+            '研究官塞特蘭': '研究官塞特蘭',
             '研究官塞特兰': '研究官塞特蘭',
             
             // 幻夢卡西亞 相关变体
             '幻梦卡西亚': '幻夢卡西亞',
+            '幻夢卡西亞': '幻夢卡西亞',
+            '幻梦卡西亞': '幻夢卡西亞',
             
             // 沉默塔爾坦 相关变体
+            '沉默塔尔坦': '沉默塔爾坦',
+            '沉默塔爾坦': '沉默塔爾坦',
             '沉默塔尔坦': '沉默塔爾坦',
             
             // 靈魂支配者卡沙帕 相关变体
             '灵魂支配者卡沙帕': '靈魂支配者卡沙帕',
+            '靈魂支配者卡沙帕': '靈魂支配者卡沙帕',
+            '灵魂支配者卡沙帕': '靈魂支配者卡沙帕',
             
             // 軍團長拉格塔 相关变体
+            '军团长拉格塔': '軍團長拉格塔',
+            '軍團長拉格塔': '軍團長拉格塔',
             '军团长拉格塔': '軍團長拉格塔',
             
             // 永恆卡爾吐亞 相关变体
             '永恒卡尔吐亚': '永恆卡爾吐亞',
-            '永恆卡尔吐亚': '永恆卡爾吐亞'
+            '永恆卡尔吐亚': '永恆卡爾吐亞',
+            '永恒卡爾吐亞': '永恆卡爾吐亞',
+            '永恆卡爾吐亚': '永恆卡爾吐亞'
         };
         
         // 检查是否有精确映射
@@ -378,9 +413,10 @@ class BossTimerApp {
         
         // 常规匹配
         const lowercaseInput = inputStr.toLowerCase();
-        const matchedBoss = this.bossTemplates.find(boss => 
-            boss.name.toLowerCase().includes(lowercaseInput)
-        );
+        const matchedBoss = this.bossTemplates.find(boss => {
+            const lowercaseBossName = boss.name.toLowerCase();
+            return lowercaseBossName.includes(lowercaseInput) || lowercaseInput.includes(lowercaseBossName);
+        });
         if (matchedBoss) {
             return matchedBoss.name;
         }
@@ -389,7 +425,14 @@ class BossTimerApp {
     }
     
     getBossSuggestions(input) {
-        const inputStr = input.trim();
+        let inputStr = input.trim();
+        
+        // 从输入中移除时间信息，只保留 BOSS 名称部分
+        const timeMatch = inputStr.match(/剩餘時間.*$/);
+        if (timeMatch) {
+            inputStr = inputStr.replace(timeMatch[0], '').trim();
+        }
+        
         const standardName = this.getStandardBossName(inputStr);
         
         if (standardName) {
