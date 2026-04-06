@@ -27,6 +27,20 @@ function createWindow() {
         alwaysOnTop: isAlwaysOnTop
     });
 
+    // 确保窗口显示后设置置顶状态
+    mainWindow.on('ready-to-show', function() {
+        if (isAlwaysOnTop) {
+            mainWindow.setAlwaysOnTop(true);
+        }
+    });
+
+    // 当窗口获得焦点时，确保置顶状态正确
+    mainWindow.on('focus', function() {
+        if (isAlwaysOnTop) {
+            mainWindow.setAlwaysOnTop(true);
+        }
+    });
+
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'index.html'),
         protocol: 'file:',
