@@ -489,17 +489,29 @@ class BossTimerApp {
         
         const respawnTime = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
         
-        const boss = {
-            id: Date.now(),
-            name: bossName,
-            respawnTime: respawnTime,
-            nextSpawn: Date.now() + respawnTime,
-            alertEnabled: true,
-            alertMinutes: 5,
-            justRespawned: false
-        };
+        // 检查是否已存在同名 BOSS
+        const existingBoss = this.bosses.find(boss => boss.name === bossName);
         
-        this.bosses.push(boss);
+        if (existingBoss) {
+            // 更新现有 BOSS 的计时时间
+            existingBoss.respawnTime = respawnTime;
+            existingBoss.nextSpawn = Date.now() + respawnTime;
+            existingBoss.justRespawned = false;
+            this.alertTriggered.delete(existingBoss.id);
+        } else {
+            // 添加新的 BOSS
+            const boss = {
+                id: Date.now(),
+                name: bossName,
+                respawnTime: respawnTime,
+                nextSpawn: Date.now() + respawnTime,
+                alertEnabled: true,
+                alertMinutes: 5,
+                justRespawned: false
+            };
+            this.bosses.push(boss);
+        }
+        
         this.saveBosses();
         this.renderBosses();
         this.updateBossSelect();
@@ -573,17 +585,30 @@ class BossTimerApp {
         
         const respawnTime = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
         
-        const boss = {
-            id: Date.now(),
-            name: standardBossName,
-            respawnTime: respawnTime,
-            nextSpawn: Date.now() + respawnTime,
-            alertEnabled: true,
-            alertMinutes: 5,
-            justRespawned: false
-        };
+        // 检查是否已存在同名 BOSS
+        const existingBoss = this.bosses.find(boss => boss.name === standardBossName);
         
-        this.bosses.push(boss);
+        if (existingBoss) {
+            // 更新现有 BOSS 的计时时间
+            existingBoss.respawnTime = respawnTime;
+            existingBoss.nextSpawn = Date.now() + respawnTime;
+            existingBoss.justRespawned = false;
+            this.alertTriggered.delete(existingBoss.id);
+            alert('已更新 ' + standardBossName + ' 的刷新时间');
+        } else {
+            // 添加新的 BOSS
+            const boss = {
+                id: Date.now(),
+                name: standardBossName,
+                respawnTime: respawnTime,
+                nextSpawn: Date.now() + respawnTime,
+                alertEnabled: true,
+                alertMinutes: 5,
+                justRespawned: false
+            };
+            this.bosses.push(boss);
+        }
+        
         this.saveBosses();
         this.renderBosses();
         this.updateBossSelect();
