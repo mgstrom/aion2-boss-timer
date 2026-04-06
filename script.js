@@ -43,7 +43,6 @@ class BossTimerApp {
         this.updateToggleLabel();
         this.setupBackgroundRunning();
         this.initDemoControls();
-        this.initCustomBoss();
         this.initTopmostToggle();
     }
     
@@ -149,9 +148,6 @@ class BossTimerApp {
 
     setupEventListeners() {
         document.getElementById('addBossBtn').addEventListener('click', () => this.addBoss());
-        document.getElementById('addCustomBossBtn').addEventListener('click', () => this.addCustomBoss());
-        document.getElementById('toggleCustomBossBtn').addEventListener('click', () => this.toggleCustomBossInputs());
-        document.getElementById('cancelCustomBossBtn').addEventListener('click', () => this.closeCustomBossModal());
         document.getElementById('saveBossBtn').addEventListener('click', () => this.saveBossEdit());
         document.getElementById('cancelEditBtn').addEventListener('click', () => this.closeEditModal());
         
@@ -162,12 +158,7 @@ class BossTimerApp {
             }
         });
         
-        // 点击自定义BOSS弹窗外部关闭
-        document.getElementById('customBossModal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('customBossModal')) {
-                this.closeCustomBossModal();
-            }
-        });
+
         
         // 演示小游戏提醒按钮
         document.getElementById('demoMinigameBtn').addEventListener('click', () => {
@@ -210,6 +201,45 @@ class BossTimerApp {
         
         // 添加BOSS按钮事件监听
         document.getElementById('addBossByNameBtn').addEventListener('click', () => this.addBossByName());
+        
+        // 剪贴板事件监听器
+        document.addEventListener('paste', (e) => {
+            const clipboardData = e.clipboardData || window.clipboardData;
+            const pastedText = clipboardData.getData('text');
+            this.handlePastedText(pastedText);
+        });
+    }
+    
+    handlePastedText(text) {
+        // 检查是否包含 BOSS 名称和时间信息
+        const bossTemplates = this.bossTemplates;
+        
+        // 检查是否包含 BOSS 名称
+        let bossName = null;
+        for (const template of bossTemplates) {
+            if (text.includes(template.name)) {
+                bossName = template.name;
+                break;
+            }
+        }
+        
+        // 检查名称映射
+        if (!bossName) {
+            for (const [variant, standardName] of Object.entries(this.nameMappings)) {
+                if (text.includes(variant)) {
+                    bossName = standardName;
+                    break;
+                }
+            }
+        }
+        
+        // 检查是否包含时间信息
+        if (bossName && text.includes('剩餘時間')) {
+            // 自动填入快速添加 BOSS 框
+            document.getElementById('bossNameInput').value = text;
+            // 触发自动识别
+            this.handleBossNameInput();
+        }
     }
     
     handleBossNameInput() {
@@ -463,7 +493,7 @@ class BossTimerApp {
         suggestionsContainer.style.display = 'block';
     }
     
-    addBossWithTime(bossName, hours, minutes, seconds) {
+    addBossWithTime(bossName, hours, minutes, seconds, updateType = '手动') {
         if (!bossName) {
             alert('请输入BOSS名称');
             return;
@@ -485,6 +515,8 @@ class BossTimerApp {
             existingBoss.respawnTime = respawnTime;
             existingBoss.nextSpawn = Date.now() + respawnTime;
             existingBoss.justRespawned = false;
+            existingBoss.lastUpdated = Date.now();
+            existingBoss.updateType = updateType;
             this.alertTriggered.delete(existingBoss.id);
             
             // 播放声音提示
@@ -498,7 +530,9 @@ class BossTimerApp {
                 nextSpawn: Date.now() + respawnTime,
                 alertEnabled: true,
                 alertMinutes: 5,
-                justRespawned: false
+                justRespawned: false,
+                lastUpdated: Date.now(),
+                updateType: updateType
             };
             this.bosses.push(boss);
         }
@@ -584,6 +618,8 @@ class BossTimerApp {
             existingBoss.respawnTime = respawnTime;
             existingBoss.nextSpawn = Date.now() + respawnTime;
             existingBoss.justRespawned = false;
+            existingBoss.lastUpdated = Date.now();
+            existingBoss.updateType = '手动';
             this.alertTriggered.delete(existingBoss.id);
             alert('已更新 ' + standardBossName + ' 的刷新时间');
         } else {
@@ -595,7 +631,9 @@ class BossTimerApp {
                 nextSpawn: Date.now() + respawnTime,
                 alertEnabled: true,
                 alertMinutes: 5,
-                justRespawned: false
+                justRespawned: false,
+                lastUpdated: Date.now(),
+                updateType: '手动'
             };
             this.bosses.push(boss);
         }
@@ -613,63 +651,9 @@ class BossTimerApp {
         this.hideBossSuggestions();
     }
 
-    toggleCustomBossInputs() {
-        const modal = document.getElementById('customBossModal');
-        modal.style.display = 'flex';
-    }
 
-    closeCustomBossModal() {
-        const modal = document.getElementById('customBossModal');
-        modal.style.display = 'none';
-        
-        // 清空输入框
-        document.getElementById('customBossName').value = '';
-        document.getElementById('customBossHours').value = '';
-        document.getElementById('customBossMinutes').value = '';
-        document.getElementById('customBossSeconds').value = '';
-    }
 
-    initCustomBoss() {
-        // 初始化自定义BOSS弹窗
-        document.getElementById('customBossModal').style.display = 'none';
-    }
 
-    addCustomBoss() {
-        const bossName = document.getElementById('customBossName').value.trim();
-        const hours = parseInt(document.getElementById('customBossHours').value) || 0;
-        const minutes = parseInt(document.getElementById('customBossMinutes').value) || 0;
-        const seconds = parseInt(document.getElementById('customBossSeconds').value) || 0;
-        
-        if (!bossName) {
-            alert('请输入BOSS名称');
-            return;
-        }
-        
-        if (hours === 0 && minutes === 0 && seconds === 0) {
-            alert('请设置倒计时时间');
-            return;
-        }
-        
-        const respawnTime = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
-        
-        const boss = {
-            id: Date.now(),
-            name: bossName,
-            respawnTime: respawnTime,
-            nextSpawn: Date.now() + respawnTime,
-            alertEnabled: true,
-            alertMinutes: 5,
-            justRespawned: false
-        };
-        
-        this.bosses.push(boss);
-        this.saveBosses();
-        this.renderBosses();
-        this.updateBossSelect();
-        
-        // 关闭弹窗并清空输入框
-        this.closeCustomBossModal();
-    }
 
     updateCurrentTime() {
         const now = new Date();
@@ -678,14 +662,7 @@ class BossTimerApp {
             minute: '2-digit',
             second: '2-digit'
         });
-        const dateString = now.toLocaleDateString('zh-CN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            weekday: 'long'
-        });
         document.getElementById('currentTime').textContent = timeString;
-        document.getElementById('currentDate').textContent = dateString;
         this.updateBossCountdowns();
         this.checkMinigameAlarm();
         this.updateNextEntryCountdown();
@@ -834,6 +811,8 @@ class BossTimerApp {
                 }
                 
                 boss.justRespawned = true;
+                boss.lastUpdated = now;
+                boss.updateType = '自动';
                 
                 this.alertTriggered.delete(boss.id);
                 
@@ -880,6 +859,23 @@ class BossTimerApp {
             const alertInfo = boss.alertEnabled !== false ? `(${boss.alertMinutes || 5}分钟提醒)` : '';
             const respawnedMark = boss.justRespawned ? '<span class="respawned-mark">✨ 已刷新</span>' : '';
             
+            // 计算上次更新时间
+            let updateInfo = '';
+            if (boss.lastUpdated) {
+                const now = Date.now();
+                const timeDiff = now - boss.lastUpdated;
+                const minutesAgo = Math.floor(timeDiff / (1000 * 60));
+                const updateType = boss.updateType || '手动';
+                if (minutesAgo < 1) {
+                    updateInfo = `(刚刚${updateType}更新)`;
+                } else if (minutesAgo < 60) {
+                    updateInfo = `(${minutesAgo}分钟前${updateType}更新)`;
+                } else {
+                    const hoursAgo = Math.floor(minutesAgo / 60);
+                    updateInfo = `(${hoursAgo}小时前${updateType}更新)`;
+                }
+            }
+            
             const bossElement = document.createElement('div');
             bossElement.className = 'boss-item';
             const totalTime = boss.respawnTime;
@@ -888,7 +884,7 @@ class BossTimerApp {
                 <div class="boss-item-content">
                     <div class="boss-info">
                         <div class="boss-name">${boss.name} ${alertStatus} ${respawnedMark}</div>
-                        <div class="boss-alert-info">${alertInfo}</div>
+                        <div class="boss-alert-info">${alertInfo} ${updateInfo}</div>
                     </div>
                     <div class="boss-time-left">${timeLeftString}</div>
                     <div class="boss-actions">

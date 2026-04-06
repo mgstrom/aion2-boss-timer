@@ -17,55 +17,30 @@ body {
     margin: 0 auto;
 }
 
-.header {
+.top-section {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
-    gap: 10px;
-}
-
-.clock-display {
-    flex: 1;
-    text-align: center;
-    padding: 20px;
-    background: #161b22;
-    border-radius: 8px;
-    border: 1px solid #30363d;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
-}
-
-.current-time {
-    font-size: 4rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 8px;
-}
-
-.current-date {
-    font-size: 1rem;
-    color: #8b949e;
     margin-bottom: 15px;
 }
 
-/* 置顶开关样式 */
+.current-time {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
 .topmost-toggle {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-top: 15px;
+    gap: 8px;
 }
 
 /* 小游戏闹钟样式 */
 .minigame-alarm {
     flex: 1;
-    max-width: 400px;
     margin-bottom: 0;
-    padding: 15px;
+    padding: 20px;
     background: #161b22;
     border-radius: 8px;
     border: 1px solid #30363d;

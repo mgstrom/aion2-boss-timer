@@ -8,10 +8,10 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="clock-display">
+        <!-- 合并时间显示和小游戏提醒 -->
+        <div class="minigame-alarm">
+            <div class="top-section">
                 <div class="current-time" id="currentTime">00:00:00</div>
-                <div class="current-date" id="currentDate"></div>
                 <div class="topmost-toggle">
                     <label class="switch">
                         <input type="checkbox" id="topmostToggle">
@@ -21,29 +21,25 @@
                 </div>
             </div>
             
-            <!-- 小游戏闹钟 -->
-            <div class="minigame-alarm">
-                <h2>⏰ 每小时小游戏提醒</h2>
-                <div class="alarm-toggle">
-                    <label class="switch">
-                        <input type="checkbox" id="minigameToggle">
-                        <span class="slider"></span>
-                    </label>
-                    <span class="toggle-label" id="toggleLabel">已关闭</span>
-                </div>
-                <p class="alarm-desc">每小时第10分钟提醒您参与小游戏</p>
-                <div id="nextAlarmTime" class="next-alarm-time"></div>
-                <div id="nextEntryCountdown" class="next-entry-countdown"></div>
-                <div class="demo-controls">
-                    <button id="demoMinigameBtn" class="btn demo-btn">🎮 演示小游戏提醒</button>
-                </div>
-                <button id="toggleDemoBtn" class="btn btn-secondary toggle-demo-btn">👁️ 隐藏调试按钮</button>
+            <h2>⏰ 每小时小游戏提醒</h2>
+            <div class="alarm-toggle">
+                <label class="switch">
+                    <input type="checkbox" id="minigameToggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" id="toggleLabel">已关闭</span>
             </div>
+            <p class="alarm-desc">每小时第10分钟提醒您参与小游戏</p>
+            <div id="nextAlarmTime" class="next-alarm-time"></div>
+            <div id="nextEntryCountdown" class="next-entry-countdown"></div>
+            <div class="demo-controls">
+                <button id="demoMinigameBtn" class="btn demo-btn">🎮 演示小游戏提醒</button>
+            </div>
+            <button id="toggleDemoBtn" class="btn btn-secondary toggle-demo-btn">👁️ 隐藏调试按钮</button>
         </div>
 
         <div class="boss-countdown">
             <h2>BOSS刷新倒计时</h2>
-            <button id="toggleCustomBossBtn" class="btn btn-secondary custom-boss-toggle">👁️ 自定义BOSS</button>
             
             <!-- 文字输入框 -->
             <div class="boss-input-section">
@@ -146,28 +142,7 @@
         </div>
     </div>
 
-    <!-- 自定义BOSS弹窗 -->
-    <div id="customBossModal" class="modal">
-        <div class="modal-content">
-            <h2>自定义BOSS</h2>
-            <div class="edit-section">
-                <h3>Boss名称</h3>
-                <input type="text" id="customBossName" placeholder="BOSS名称" class="form-control">
-            </div>
-            <div class="edit-section">
-                <h3>倒计时时间</h3>
-                <div class="time-inputs">
-                    <input type="number" id="customBossHours" min="0" max="23" placeholder="时">
-                    <input type="number" id="customBossMinutes" min="0" max="59" placeholder="分">
-                    <input type="number" id="customBossSeconds" min="0" max="59" placeholder="秒">
-                </div>
-            </div>
-            <div class="modal-buttons">
-                <button id="addCustomBossBtn" class="btn btn-primary">添加自定义BOSS</button>
-                <button id="cancelCustomBossBtn" class="btn btn-secondary">取消</button>
-            </div>
-        </div>
-    </div>
+
 
     <script src="script.js"></script>
 </body>
