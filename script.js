@@ -833,7 +833,18 @@ class BossTimerApp {
                 
                 const killTime = 60 * 1000;
                 boss.lastKilled = now;
-                boss.nextSpawn = now + boss.respawnTime + killTime;
+                
+                // 查找BOSS模板中的固定刷新时间
+                const bossTemplate = this.bossTemplates.find(b => b.name === boss.name);
+                if (bossTemplate) {
+                    // 使用模板中的固定时间
+                    boss.respawnTime = bossTemplate.respawnTime;
+                    boss.nextSpawn = now + bossTemplate.respawnTime + killTime;
+                } else {
+                    // 如果找不到模板，使用当前的respawnTime
+                    boss.nextSpawn = now + boss.respawnTime + killTime;
+                }
+                
                 boss.justRespawned = true;
                 
                 this.alertTriggered.delete(boss.id);
