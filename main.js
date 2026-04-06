@@ -30,28 +30,28 @@ function createWindow() {
     // 确保窗口显示后设置置顶状态
     mainWindow.on('ready-to-show', function() {
         if (isAlwaysOnTop) {
-            mainWindow.setAlwaysOnTop(true);
+            mainWindow.setAlwaysOnTop(true, 'screen');
         }
     });
 
     // 当窗口获得焦点时，确保置顶状态正确
     mainWindow.on('focus', function() {
         if (isAlwaysOnTop) {
-            mainWindow.setAlwaysOnTop(true);
+            mainWindow.setAlwaysOnTop(true, 'screen');
         }
     });
 
     // 当窗口显示时，确保置顶状态正确
     mainWindow.on('show', function() {
         if (isAlwaysOnTop) {
-            mainWindow.setAlwaysOnTop(true);
+            mainWindow.setAlwaysOnTop(true, 'screen');
         }
     });
 
     // 当窗口从最小化恢复时，确保置顶状态正确
     mainWindow.on('restore', function() {
         if (isAlwaysOnTop) {
-            mainWindow.setAlwaysOnTop(true);
+            mainWindow.setAlwaysOnTop(true, 'screen');
         }
     });
 
@@ -114,7 +114,8 @@ ipcMain.on('toggleAlwaysOnTop', (event, newAlwaysOnTop) => {
     // 更新全局置顶状态
     isAlwaysOnTop = newAlwaysOnTop;
     if (mainWindow) {
-        mainWindow.setAlwaysOnTop(newAlwaysOnTop);
+        // 使用 'screen' 层级确保窗口在所有其他窗口之上
+        mainWindow.setAlwaysOnTop(newAlwaysOnTop, 'screen');
         event.reply('alwaysOnTopToggled', newAlwaysOnTop);
     }
 });
