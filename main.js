@@ -4,6 +4,9 @@ const url = require('url');
 
 let mainWindow;
 
+// 存储当前的置顶状态
+let isAlwaysOnTop = false;
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 900,
@@ -21,7 +24,7 @@ function createWindow() {
         frame: true,
         title: '永恒之塔2 BOSS刷新倒计时',
         show: true,
-        alwaysOnTop: false
+        alwaysOnTop: isAlwaysOnTop
     });
 
     mainWindow.loadURL(url.format({
@@ -79,9 +82,11 @@ ipcMain.on('close', () => {
     }
 });
 
-ipcMain.on('toggleAlwaysOnTop', (event, isAlwaysOnTop) => {
+ipcMain.on('toggleAlwaysOnTop', (event, newAlwaysOnTop) => {
+    // 更新全局置顶状态
+    isAlwaysOnTop = newAlwaysOnTop;
     if (mainWindow) {
-        mainWindow.setAlwaysOnTop(isAlwaysOnTop);
-        event.reply('alwaysOnTopToggled', isAlwaysOnTop);
+        mainWindow.setAlwaysOnTop(newAlwaysOnTop);
+        event.reply('alwaysOnTopToggled', newAlwaysOnTop);
     }
 });
