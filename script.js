@@ -1017,12 +1017,27 @@ class BossTimerApp {
         }
         
         const now = new Date();
-        const currentHour = now.getHours();
         const targetTime = new Date(now);
-        targetTime.setHours(currentHour, 18, 0, 0);
         
-        if (now.getMinutes() >= 18) {
-            targetTime.setHours(currentHour + 1, 18, 0, 0);
+        // 设置分钟为18，秒和毫秒为0
+        targetTime.setMinutes(18, 0, 0);
+        
+        // 计算当前小时
+        let currentHour = targetTime.getHours();
+        
+        // 检查是否需要调整到下一个双数小时
+        if (now.getMinutes() >= 18 || currentHour % 2 !== 0) {
+            // 计算下一个双数小时
+            let nextHour = currentHour + 1;
+            while (nextHour % 2 !== 0) {
+                nextHour++;
+            }
+            // 处理跨天的情况
+            if (nextHour >= 24) {
+                nextHour = 0;
+                targetTime.setDate(targetTime.getDate() + 1);
+            }
+            targetTime.setHours(nextHour);
         }
         
         const remaining = Math.max(0, targetTime - now);
@@ -1035,10 +1050,26 @@ class BossTimerApp {
     getNextMinigameAlarm() {
         const now = new Date();
         const nextAlarm = new Date(now);
+        
+        // 设置分钟为10，秒和毫秒为0
         nextAlarm.setMinutes(10, 0, 0);
         
-        if (now.getMinutes() >= 10) {
-            nextAlarm.setHours(nextAlarm.getHours() + 1);
+        // 计算当前小时
+        let currentHour = nextAlarm.getHours();
+        
+        // 检查是否需要调整到下一个双数小时
+        if (now.getMinutes() >= 10 || currentHour % 2 !== 0) {
+            // 计算下一个双数小时
+            let nextHour = currentHour + 1;
+            while (nextHour % 2 !== 0) {
+                nextHour++;
+            }
+            // 处理跨天的情况
+            if (nextHour >= 24) {
+                nextHour = 0;
+                nextAlarm.setDate(nextAlarm.getDate() + 1);
+            }
+            nextAlarm.setHours(nextHour);
         }
         
         return nextAlarm;
@@ -1048,7 +1079,8 @@ class BossTimerApp {
         if (!this.minigameAlarmEnabled) return;
         
         const now = new Date();
-        if (now.getMinutes() === 10 && now.getSeconds() === 0 && !this.minigameAlarmTriggered) {
+        // 只在双数小时的第10分钟触发提醒
+        if (now.getMinutes() === 10 && now.getSeconds() === 0 && now.getHours() % 2 === 0 && !this.minigameAlarmTriggered) {
             this.minigameAlarmTriggered = true;
             this.triggerMinigameAlarm();
             
