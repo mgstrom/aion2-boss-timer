@@ -1019,14 +1019,14 @@ class BossTimerApp {
         const now = new Date();
         const targetTime = new Date(now);
         
-        // 设置分钟为3，秒和毫秒为0（提醒后3分钟进场）
-        targetTime.setMinutes(3, 0, 0);
+        // 设置分钟为0，秒和毫秒为0（整点进场）
+        targetTime.setMinutes(0, 0, 0);
         
         // 计算当前小时
         let currentHour = targetTime.getHours();
         
         // 检查是否需要调整到下一个双数小时
-        if (now.getMinutes() >= 3 || currentHour % 2 !== 0) {
+        if (now.getMinutes() >= 0 || currentHour % 2 !== 0) {
             // 计算下一个双数小时
             let nextHour = currentHour + 1;
             while (nextHour % 2 !== 0) {
@@ -1051,14 +1051,14 @@ class BossTimerApp {
         const now = new Date();
         const nextAlarm = new Date(now);
         
-        // 设置分钟为0，秒和毫秒为0（整点提醒）
-        nextAlarm.setMinutes(0, 0, 0);
+        // 设置分钟为57，秒和毫秒为0（双数整点前3分钟提醒）
+        nextAlarm.setMinutes(57, 0, 0);
         
         // 计算当前小时
         let currentHour = nextAlarm.getHours();
         
         // 检查是否需要调整到下一个双数小时
-        if (now.getMinutes() >= 0 || currentHour % 2 !== 0) {
+        if (now.getMinutes() >= 57 || currentHour % 2 !== 0) {
             // 计算下一个双数小时
             let nextHour = currentHour + 1;
             while (nextHour % 2 !== 0) {
@@ -1079,8 +1079,8 @@ class BossTimerApp {
         if (!this.minigameAlarmEnabled) return;
         
         const now = new Date();
-        // 只在双数小时的整点触发提醒
-        if (now.getMinutes() === 0 && now.getSeconds() === 0 && now.getHours() % 2 === 0 && !this.minigameAlarmTriggered) {
+        // 只在双数小时的第57分钟触发提醒（双数整点前3分钟）
+        if (now.getMinutes() === 57 && now.getSeconds() === 0 && now.getHours() % 2 === 0 && !this.minigameAlarmTriggered) {
             this.minigameAlarmTriggered = true;
             this.triggerMinigameAlarm();
             
