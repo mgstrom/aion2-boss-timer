@@ -41,6 +41,14 @@ class BossTimerApp {
         this.updateNextEntryCountdown();
         document.getElementById('minigameToggle').checked = this.minigameAlarmEnabled;
         this.updateToggleLabel();
+        
+        // 检查当前时间是否符合小游戏提醒的触发条件，如果符合，就将 minigameAlarmTriggered 设置为 true
+        // 这样就不会在启动时触发声音
+        const now = new Date();
+        if (now.getMinutes() === 57 && now.getSeconds() === 0 && now.getHours() % 2 === 0) {
+            this.minigameAlarmTriggered = true;
+        }
+        
         this.setupBackgroundRunning();
         this.initDemoControls();
         this.initTopmostToggle();
