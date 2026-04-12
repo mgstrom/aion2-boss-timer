@@ -1034,7 +1034,7 @@ class BossTimerApp {
         let currentHour = targetTime.getHours();
         
         // 检查是否需要调整到下一个双数小时
-        if (now.getMinutes() >= 0 || currentHour % 2 !== 0) {
+        if (now.getMinutes() > 0 || currentHour % 2 !== 0) {
             // 计算下一个双数小时
             let nextHour = currentHour + 1;
             while (nextHour % 2 !== 0) {
@@ -1074,9 +1074,8 @@ class BossTimerApp {
                 // 如果当前分钟>=57，下一个双数小时就是当前小时+2
                 nextHour = currentHour + 2;
             } else {
-                // 如果当前分钟<57，下一个双数小时就是当前小时+2
-                // 这样当当前时间是0:00时，下次提醒时间会是1:57（2:00进场的前3分钟）
-                nextHour = currentHour + 2;
+                // 如果当前分钟<57，下一个双数小时就是当前小时
+                nextHour = currentHour;
             }
         }
         
@@ -1103,8 +1102,9 @@ class BossTimerApp {
         if (!this.minigameAlarmEnabled) return;
         
         const now = new Date();
-        // 只在双数小时的第57分钟触发提醒（双数整点前3分钟）
-        if (now.getMinutes() === 57 && now.getSeconds() === 0 && now.getHours() % 2 === 0 && !this.minigameAlarmTriggered) {
+        // 只在单数小时的第57分钟触发提醒（双数整点前3分钟）
+        // 例如：1:57提醒，2:00进场；3:57提醒，4:00进场，以此类推
+        if (now.getMinutes() === 57 && now.getSeconds() === 0 && now.getHours() % 2 !== 0 && !this.minigameAlarmTriggered) {
             this.minigameAlarmTriggered = true;
             this.triggerMinigameAlarm();
             
@@ -1152,13 +1152,34 @@ class BossTimerApp {
         });
         document.getElementById('minigameCurrentTime').textContent = timeString;
         
+        // 计算下一个双数整点作为进场时间
         const currentHour = now.getHours();
         const targetTime = new Date(now);
-        targetTime.setHours(currentHour, 18, 0, 0);
         
-        if (now.getMinutes() >= 18) {
-            targetTime.setHours(currentHour + 1, 18, 0, 0);
+        // 计算下一个双数小时
+        let nextHour;
+        if (currentHour % 2 !== 0) {
+            // 如果当前小时是单数，下一个双数小时就是当前小时+1
+            nextHour = currentHour + 1;
+        } else {
+            // 如果当前小时是双数
+            if (now.getMinutes() > 0) {
+                // 如果当前分钟>0，下一个双数小时就是当前小时+2
+                nextHour = currentHour + 2;
+            } else {
+                // 如果当前分钟=0，下一个双数小时就是当前小时
+                nextHour = currentHour;
+            }
         }
+        
+        // 处理跨天的情况
+        if (nextHour >= 24) {
+            nextHour = nextHour - 24;
+            targetTime.setDate(targetTime.getDate() + 1);
+        }
+        
+        // 设置进场时间为双数整点
+        targetTime.setHours(nextHour, 0, 0, 0);
         
         const remaining = Math.max(0, targetTime - now);
         const minutes = Math.floor(remaining / (1000 * 60));
