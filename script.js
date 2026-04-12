@@ -11,6 +11,7 @@ class BossTimerApp {
         this.minigameAudioContext = null;
         this.minigameStartTime = null;
         this.minigameUpdateInterval = null;
+        this.minigameTwoMinuteAlarmTriggered = false;
         
         this.bossTemplates = [
             { name: '學者拉兀拉', respawnTime: 120 * 60 * 1000 },
@@ -1112,22 +1113,35 @@ class BossTimerApp {
                 this.minigameAlarmTriggered = false;
             }, 1000);
         }
+        
+        // 进场前2分钟提醒（双数整点前2分钟）
+        // 例如：1:58提醒，2:00进场；3:58提醒，4:00进场，以此类推
+        if (now.getMinutes() === 58 && now.getSeconds() === 0 && now.getHours() % 2 !== 0 && !this.minigameTwoMinuteAlarmTriggered) {
+            this.minigameTwoMinuteAlarmTriggered = true;
+            this.triggerTwoMinuteAlarm();
+            
+            setTimeout(() => {
+                this.minigameTwoMinuteAlarmTriggered = false;
+            }, 1000);
+        }
     }
 
     triggerMinigameAlarm() {
         this.minigameAlarmTriggered = true;
         this.minigameStartTime = Date.now();
         
+        // 使用人类语音提示：还有3分钟小游戏要开始了哦
+        this.speak('还有3分钟小游戏要开始了哦');
+        
         document.getElementById('minigameModal').style.display = 'flex';
         
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('小游戏时间到了！', {
-                body: '请参与小游戏获取奖励',
+            new Notification('小游戏即将开始', {
+                body: '还有3分钟小游戏要开始了',
                 icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgMGMtMTIuNSAwLTI1IDUuNS0yNSAyNSAwIDEyLjUgNS41IDI1IDI1IDI1czI1LTUuNSAyNS0yNSAwLTEyLjUtNS41LTI1LTI1LTI1em0wIDgwYy0xNS41IDAtMjAtLTMtMjAtMTBzNC41LTEwIDIwLTEwIDIwIDUgMjAgMTAtNC41IDEwLTIwIDEwem0tMTAtMzBjLTcgMC0xNS01LTE1LTE1czgtMTUgMTUtMTUgMTUgNSAxNSAxNS04IDE1LTE1LTE1eiIvPjxwYXRoIGQ9Ik0xMCAxMGg4MHY4MGgtODB6bTEwIDQwaDEwdjEwaC0xMHpNMzAgNDBoMTB2MTBoLTEwem0yMCA0MGgxMHYxMGgtMTB6bTIwIDQwaDEwdjEwaC0xMHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4='
             });
         }
         
-        this.startContinuousAlarm();
         this.startMinigameTimeUpdate();
         
         // 10秒后自动关闭弹窗
@@ -1188,45 +1202,6 @@ class BossTimerApp {
         document.getElementById('minigameEntryCountdown').textContent = countdownString;
     }
 
-    startContinuousAlarm() {
-        this.minigameAlarmInterval = setInterval(() => {
-            this.playMinigameAlarmSound();
-        }, 2000);
-    }
-
-    playMinigameAlarmSound() {
-        try {
-            if (!this.minigameAudioContext) {
-                this.minigameAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            
-            const notes = [523.25, 659.25, 783.99, 1046.50];
-            
-            notes.forEach((frequency, index) => {
-                setTimeout(() => {
-                    const oscillator = this.minigameAudioContext.createOscillator();
-                    const gainNode = this.minigameAudioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(this.minigameAudioContext.destination);
-                    
-                    oscillator.frequency.value = frequency;
-                    gainNode.gain.value = 0.3;
-                    
-                    oscillator.start();
-                    setTimeout(() => {
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.minigameAudioContext.currentTime + 0.1);
-                        setTimeout(() => {
-                            oscillator.stop();
-                        }, 100);
-                    }, 100);
-                }, index * 150);
-            });
-        } catch (error) {
-            console.log('播放声音失败:', error);
-        }
-    }
-
     stopMinigameAlarm() {
         document.getElementById('minigameModal').style.display = 'none';
         
@@ -1238,6 +1213,29 @@ class BossTimerApp {
         if (this.minigameUpdateInterval) {
             clearInterval(this.minigameUpdateInterval);
             this.minigameUpdateInterval = null;
+        }
+    }
+    
+    triggerTwoMinuteAlarm() {
+        // 使用人类语音提示：还有2分钟进场哦
+        this.speak('还有2分钟进场哦');
+        
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('小游戏即将开始', {
+                body: '还有2分钟进场',
+                icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgMGMtMTIuNSAwLTI1IDUuNS0yNSAyNSAwIDEyLjUgNS41IDI1IDI1IDI1czI1LTUuNSAyNS0yNSAwLTEyLjUtNS41LTI1LTI1LTI1em0wIDgwYy0xNS41IDAtMjAtLTMtMjAtMTBzNC41LTEwIDIwLTEwIDIwIDUgMjAgMTAtNC41IDEwLTIwIDEwem0tMTAtMzBjLTcgMC0xNS01LTE1LTE1czgtMTUgMTUtMTUgMTUgNSAxNSAxNS04IDE1LTE1LTE1eiIvPjxwYXRoIGQ9Ik0xMCAxMGg4MHY4MGgtODB6bTEwIDQwaDEwdjEwaC0xMHpNMzAgNDBoMTB2MTBoLTEwem0yMCA0MGgxMHYxMGgtMTB6bTIwIDQwaDEwdjEwaC0xMHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4='
+            });
+        }
+    }
+    
+    speak(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            speechSynthesis.speak(utterance);
         }
     }
 }
