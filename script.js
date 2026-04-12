@@ -1059,26 +1059,42 @@ class BossTimerApp {
         const now = new Date();
         const nextAlarm = new Date(now);
         
-        // 设置分钟为57，秒和毫秒为0（双数整点前3分钟提醒）
-        nextAlarm.setMinutes(57, 0, 0);
+        // 计算当前小时和分钟
+        let currentHour = now.getHours();
+        let currentMinute = now.getMinutes();
         
-        // 计算当前小时
-        let currentHour = nextAlarm.getHours();
-        
-        // 检查是否需要调整到下一个双数小时
-        if (now.getMinutes() >= 57 || currentHour % 2 !== 0) {
-            // 计算下一个双数小时
-            let nextHour = currentHour + 1;
-            while (nextHour % 2 !== 0) {
-                nextHour++;
+        // 计算下一个双数小时
+        let nextHour;
+        if (currentHour % 2 !== 0) {
+            // 如果当前小时是单数，下一个双数小时就是当前小时+1
+            nextHour = currentHour + 1;
+        } else {
+            // 如果当前小时是双数
+            if (currentMinute >= 57) {
+                // 如果当前分钟>=57，下一个双数小时就是当前小时+2
+                nextHour = currentHour + 2;
+            } else {
+                // 如果当前分钟<57，下一个双数小时就是当前小时+2
+                // 这样当当前时间是0:00时，下次提醒时间会是1:57（2:00进场的前3分钟）
+                nextHour = currentHour + 2;
             }
-            // 处理跨天的情况
-            if (nextHour >= 24) {
-                nextHour = 0;
-                nextAlarm.setDate(nextAlarm.getDate() + 1);
-            }
-            nextAlarm.setHours(nextHour);
         }
+        
+        // 处理跨天的情况
+        if (nextHour >= 24) {
+            nextHour = nextHour - 24;
+            nextAlarm.setDate(nextAlarm.getDate() + 1);
+        }
+        
+        // 计算提醒时间：下一个双数小时的前3分钟（即前一个小时的57分钟）
+        let alarmHour = nextHour - 1;
+        if (alarmHour < 0) {
+            alarmHour = 23;
+            nextAlarm.setDate(nextAlarm.getDate() - 1);
+        }
+        
+        // 设置提醒时间
+        nextAlarm.setHours(alarmHour, 57, 0, 0);
         
         return nextAlarm;
     }
