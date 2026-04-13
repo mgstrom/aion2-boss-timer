@@ -2,6 +2,10 @@ const { app, BrowserWindow, ipcMain, Notification } = require('electron');
 const path = require('path');
 const url = require('url');
 
+// 启用语音合成功能
+app.commandLine.appendSwitch('enable-speech-dispatcher');
+app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
+
 let mainWindow;
 
 // 存储当前的置顶状态
