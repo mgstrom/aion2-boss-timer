@@ -1197,6 +1197,13 @@ class BossTimerApp {
     speak(text) {
         if ('speechSynthesis' in window) {
             try {
+                // 确保语音合成引擎已经准备就绪
+                if (speechSynthesis.pending || speechSynthesis.speaking) {
+                    // 如果正在播放其他语音，等待完成后再播放
+                    setTimeout(() => this.speak(text), 500);
+                    return;
+                }
+                
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'zh-CN';
                 utterance.rate = 0.9;
@@ -1221,12 +1228,18 @@ class BossTimerApp {
                             utterance.voice = zhVoices[0];
                         }
                         
+                        // 确保设置正确的语速和音高
+                        utterance.rate = 0.9;
+                        utterance.pitch = 1.2;
+                        
                         speechSynthesis.speak(utterance);
                         // 移除事件监听器，避免重复调用
                         speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
                     };
                     
-                    // 添加事件监听器
+                    // 移除之前可能存在的事件监听器
+                    speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+                    // 添加新的事件监听器
                     speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
                     
                     // 如果语音列表已经加载完成，直接触发处理函数
@@ -1236,38 +1249,7 @@ class BossTimerApp {
                 }
             } catch (error) {
                 console.log('语音合成失败:', error);
-                // 如果语音合成失败，播放音调提示
-                this.playFallbackSound();
             }
-        } else {
-            // 如果语音合成不可用，播放音调提示
-            this.playFallbackSound();
-        }
-    }
-    
-    playFallbackSound() {
-        try {
-            // 创建简单的音调提示
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            // 设置林志玲风格的音调（高音调）
-            oscillator.frequency.value = 1000;
-            gainNode.gain.value = 0.3;
-            
-            oscillator.start();
-            setTimeout(() => {
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                setTimeout(() => {
-                    oscillator.stop();
-                }, 500);
-            }, 200);
-        } catch (error) {
-            console.log('播放回退音效失败:', error);
         }
     }
 }
