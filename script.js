@@ -1196,43 +1196,78 @@ class BossTimerApp {
     
     speak(text) {
         if ('speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-CN';
-            utterance.rate = 0.9;
-            utterance.pitch = 1.2;
-            utterance.volume = 1;
-            
-            // 尝试选择林志玲风格的语音（高 pitched 女声）
-            const voices = speechSynthesis.getVoices();
-            const zhVoices = voices.filter(voice => voice.lang === 'zh-CN' || voice.lang === 'zh');
-            
-            if (zhVoices.length > 0) {
-                // 选择第一个中文语音，通常是女声
-                utterance.voice = zhVoices[0];
-                speechSynthesis.speak(utterance);
-            } else {
-                // 如果没有找到中文语音，等待语音加载完成
-                const handleVoicesChanged = () => {
-                    const voices = speechSynthesis.getVoices();
-                    const zhVoices = voices.filter(voice => voice.lang === 'zh-CN' || voice.lang === 'zh');
-                    
-                    if (zhVoices.length > 0) {
-                        utterance.voice = zhVoices[0];
-                    }
-                    
+            try {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.2;
+                utterance.volume = 1;
+                
+                // 尝试选择林志玲风格的语音（高 pitched 女声）
+                const voices = speechSynthesis.getVoices();
+                const zhVoices = voices.filter(voice => voice.lang === 'zh-CN' || voice.lang === 'zh');
+                
+                if (zhVoices.length > 0) {
+                    // 选择第一个中文语音，通常是女声
+                    utterance.voice = zhVoices[0];
                     speechSynthesis.speak(utterance);
-                    // 移除事件监听器，避免重复调用
-                    speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-                };
-                
-                // 添加事件监听器
-                speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-                
-                // 如果语音列表已经加载完成，直接触发处理函数
-                if (voices.length > 0) {
-                    handleVoicesChanged();
+                } else {
+                    // 如果没有找到中文语音，等待语音加载完成
+                    const handleVoicesChanged = () => {
+                        const voices = speechSynthesis.getVoices();
+                        const zhVoices = voices.filter(voice => voice.lang === 'zh-CN' || voice.lang === 'zh');
+                        
+                        if (zhVoices.length > 0) {
+                            utterance.voice = zhVoices[0];
+                        }
+                        
+                        speechSynthesis.speak(utterance);
+                        // 移除事件监听器，避免重复调用
+                        speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+                    };
+                    
+                    // 添加事件监听器
+                    speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+                    
+                    // 如果语音列表已经加载完成，直接触发处理函数
+                    if (voices.length > 0) {
+                        handleVoicesChanged();
+                    }
                 }
+            } catch (error) {
+                console.log('语音合成失败:', error);
+                // 如果语音合成失败，播放音调提示
+                this.playFallbackSound();
             }
+        } else {
+            // 如果语音合成不可用，播放音调提示
+            this.playFallbackSound();
+        }
+    }
+    
+    playFallbackSound() {
+        try {
+            // 创建简单的音调提示
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // 设置林志玲风格的音调（高音调）
+            oscillator.frequency.value = 1000;
+            gainNode.gain.value = 0.3;
+            
+            oscillator.start();
+            setTimeout(() => {
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                setTimeout(() => {
+                    oscillator.stop();
+                }, 500);
+            }, 200);
+        } catch (error) {
+            console.log('播放回退音效失败:', error);
         }
     }
 }
