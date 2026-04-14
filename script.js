@@ -1206,50 +1206,68 @@ class BossTimerApp {
                 
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'zh-CN';
-                utterance.rate = 0.9;
-                utterance.pitch = 1.2;
+                utterance.rate = 0.8; // 更慢的语速，接近林志玲
+                utterance.pitch = 1.3; // 更高的音高，接近林志玲
                 utterance.volume = 1;
                 
-                // 尝试选择林志玲风格的语音（高 pitched 女声）
+                // 尝试获取语音列表并选择中文语音
                 const voices = speechSynthesis.getVoices();
-                const zhVoices = voices.filter(voice => voice.lang === 'zh-CN' || voice.lang === 'zh');
+                const zhVoices = voices.filter(voice => 
+                    voice.lang === 'zh-CN' || 
+                    voice.lang === 'zh' || 
+                    voice.name.includes('Chinese') ||
+                    voice.name.includes('中文')
+                );
                 
                 if (zhVoices.length > 0) {
-                    // 选择第一个中文语音，通常是女声
+                    // 选择第一个中文语音
                     utterance.voice = zhVoices[0];
-                    speechSynthesis.speak(utterance);
-                } else {
-                    // 如果没有找到中文语音，等待语音加载完成
-                    const handleVoicesChanged = () => {
-                        const voices = speechSynthesis.getVoices();
-                        const zhVoices = voices.filter(voice => voice.lang === 'zh-CN' || voice.lang === 'zh');
-                        
-                        if (zhVoices.length > 0) {
-                            utterance.voice = zhVoices[0];
-                        }
-                        
-                        // 确保设置正确的语速和音高
-                        utterance.rate = 0.9;
-                        utterance.pitch = 1.2;
-                        
-                        speechSynthesis.speak(utterance);
-                        // 移除事件监听器，避免重复调用
-                        speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-                    };
-                    
-                    // 移除之前可能存在的事件监听器
-                    speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-                    // 添加新的事件监听器
-                    speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-                    
-                    // 如果语音列表已经加载完成，直接触发处理函数
-                    if (voices.length > 0) {
-                        handleVoicesChanged();
-                    }
                 }
+                
+                // 播放语音
+                speechSynthesis.speak(utterance);
             } catch (error) {
                 console.log('语音合成失败:', error);
+                // 语音合成失败，使用回退音效
+                this.playLingZhiLingSound();
             }
+        } else {
+            // 语音合成不可用，使用回退音效
+            this.playLingZhiLingSound();
+        }
+    }
+    
+    playLingZhiLingSound() {
+        try {
+            // 创建林志玲风格的音调提示（高音调，类似林志玲的声音特点）
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 创建一个旋律，模拟林志玲的声音特点
+            const notes = [800, 900, 1000, 900, 800]; // 高音调
+            const durations = [200, 200, 200, 200, 300];
+            
+            notes.forEach((frequency, index) => {
+                setTimeout(() => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = frequency;
+                    gainNode.gain.value = 0.3;
+                    
+                    oscillator.start();
+                    setTimeout(() => {
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                        setTimeout(() => {
+                            oscillator.stop();
+                        }, 100);
+                    }, durations[index]);
+                }, index * 250);
+            });
+        } catch (error) {
+            console.log('播放回退音效失败:', error);
         }
     }
 }
