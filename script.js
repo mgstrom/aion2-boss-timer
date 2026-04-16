@@ -7,9 +7,21 @@ class BossTimerApp {
         // 小游戏闹钟相关
         this.minigameAlarmEnabled = JSON.parse(localStorage.getItem('minigameAlarmEnabled')) || false;
         this.minigameAlarmTriggered = false;
+        this.minigameAlarmInterval = null;
+        this.minigameAudioContext = null;
         this.minigameStartTime = null;
         this.minigameUpdateInterval = null;
         this.minigameTwoMinuteAlarmTriggered = false;
+        
+        // NTP时间校准相关
+        this.ntpServers = [
+            'ntp.ntsc.ac.cn',  // 国家授时中心
+            'ntp.aliyun.com',   // 阿里云
+            'ntp.tencent.com'   // 腾讯云
+        ];
+        this.ntpOffset = 0; // NTP时间与本地时间的偏移量（毫秒）
+        this.ntpLastSync = 0; // 上次同步时间
+        this.ntpSyncInterval = null; // 定期同步的定时器
         
         this.bossTemplates = [
             { name: '學者拉兀拉', respawnTime: 120 * 60 * 1000 },
@@ -43,14 +55,69 @@ class BossTimerApp {
         
         // 检查当前时间是否符合小游戏提醒的触发条件，如果符合，就将 minigameAlarmTriggered 设置为 true
         // 这样就不会在启动时触发声音
-        const now = new Date();
+        const now = this.getNtpTime();
         if (now.getMinutes() === 57 && now.getSeconds() === 0 && now.getHours() % 2 === 0) {
             this.minigameAlarmTriggered = true;
         }
         
+        // 初始化NTP时间校准
+        this.syncNtpTime();
+        // 每10分钟同步一次NTP时间
+        this.ntpSyncInterval = setInterval(() => this.syncNtpTime(), 10 * 60 * 1000);
+        
         this.setupBackgroundRunning();
         this.initDemoControls();
         this.initTopmostToggle();
+    }
+    
+    // 获取NTP校准后的时间
+    getNtpTime() {
+        const now = new Date();
+        return new Date(now.getTime() + this.ntpOffset);
+    }
+    
+    // 同步NTP时间
+    async syncNtpTime() {
+        try {
+            // 使用worldtimeapi.org作为时间源
+            const response = await fetch('https://worldtimeapi.org/api/ip');
+            if (response.ok) {
+                const data = await response.json();
+                const ntpTime = new Date(data.utc_datetime);
+                const localTime = new Date();
+                this.ntpOffset = ntpTime.getTime() - localTime.getTime();
+                this.ntpLastSync = localTime.getTime();
+                console.log('NTP时间同步成功，偏移量:', this.ntpOffset, '毫秒');
+            } else {
+                throw new Error('API响应失败');
+            }
+        } catch (error) {
+            console.error('NTP时间同步失败:', error);
+            // 如果API失败，尝试使用其他方法
+            this.fallbackSyncNtpTime();
+        }
+    }
+    
+    // 备用NTP时间同步方法
+    fallbackSyncNtpTime() {
+        try {
+            // 使用另一个时间API
+            fetch('https://api.timezonedb.com/v2.1/get-time-zone?key=9Z6HBNYLOP91&format=json&by=position&lat=39.9042&lng=116.4074')
+                .then(response => response.json())
+                .then(data => {
+                    const ntpTime = new Date(data.timestamp * 1000);
+                    const localTime = new Date();
+                    this.ntpOffset = ntpTime.getTime() - localTime.getTime();
+                    this.ntpLastSync = localTime.getTime();
+                    console.log('备用NTP时间同步成功，偏移量:', this.ntpOffset, '毫秒');
+                })
+                .catch(error => {
+                    console.error('备用NTP时间同步失败:', error);
+                    // 如果所有方法都失败，保持使用本地时间
+                });
+        } catch (error) {
+            console.error('备用NTP时间同步失败:', error);
+        }
     }
     
     initTopmostToggle() {
@@ -513,6 +580,7 @@ class BossTimerApp {
         }
         
         const respawnTime = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+        const now = this.getNtpTime().getTime();
         
         // 检查是否已存在同名 BOSS
         const existingBoss = this.bosses.find(boss => boss.name === bossName);
@@ -520,25 +588,25 @@ class BossTimerApp {
         if (existingBoss) {
             // 更新现有 BOSS 的计时时间
             existingBoss.respawnTime = respawnTime;
-            existingBoss.nextSpawn = Date.now() + respawnTime;
+            existingBoss.nextSpawn = now + respawnTime;
             existingBoss.justRespawned = false;
-            existingBoss.lastUpdated = Date.now();
+            existingBoss.lastUpdated = now;
             existingBoss.updateType = updateType;
             this.alertTriggered.delete(existingBoss.id);
             
-            // 播放语音提示
-            this.speak(`${bossName} 的刷新时间已更新`);
+            // 播放声音提示
+            this.playAlarmSound();
         } else {
             // 添加新的 BOSS
             const boss = {
-                id: Date.now(),
+                id: now,
                 name: bossName,
                 respawnTime: respawnTime,
-                nextSpawn: Date.now() + respawnTime,
+                nextSpawn: now + respawnTime,
                 alertEnabled: true,
                 alertMinutes: 5,
                 justRespawned: false,
-                lastUpdated: Date.now(),
+                lastUpdated: now,
                 updateType: updateType
             };
             this.bosses.push(boss);
@@ -663,7 +731,7 @@ class BossTimerApp {
 
 
     updateCurrentTime() {
-        const now = new Date();
+        const now = this.getNtpTime();
         const timeString = now.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit',
@@ -683,11 +751,12 @@ class BossTimerApp {
         const bossTemplate = this.bossTemplates.find(b => b.name === bossName);
         if (!bossTemplate) return;
         
+        const now = this.getNtpTime().getTime();
         const boss = {
-            id: Date.now(),
+            id: now,
             name: bossName,
             respawnTime: bossTemplate.respawnTime,
-            nextSpawn: Date.now() + bossTemplate.respawnTime,
+            nextSpawn: now + bossTemplate.respawnTime,
             alertEnabled: true,
             alertMinutes: 5,
             justRespawned: false
@@ -784,7 +853,7 @@ class BossTimerApp {
     }
 
     updateBossCountdowns() {
-        const now = Date.now();
+        const now = this.getNtpTime().getTime();
         
         this.bosses.forEach(boss => {
             const timeLeft = boss.nextSpawn - now;
@@ -956,7 +1025,7 @@ class BossTimerApp {
                 icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgMGMtMTIuNSAwLTI1IDUuNS0yNSAyNSAwIDEyLjUgNS41IDI1IDI1IDI1czI1LTUuNSAyNS0yNSAwLTEyLjUtNS41LTI1LTI1LTI1em0wIDgwYy0xNS41IDAtMjAtLTMtMjAtMTBzNC41LTEwIDIwLTEwIDIwIDUgMjAgMTAtNC41IDEwLTIwIDEwem0tMTAtMzBjLTcgMC0xNS01LTE1LTE1czgtMTUgMTUtMTUgMTUgNSAxNSAxNS04IDE1LTE1LTE1eiIvPjxwYXRoIGQ9Ik0xMCAxMGg4MHY4MGgtODB6bTEwIDQwaDEwdjEwaC0xMHpNMzAgNDBoMTB2MTBoLTEwem0yMCA0MGgxMHYxMGgtMTB6bTIwIDQwaDEwdjEwaC0xMHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4='
             });
         }
-        this.speak(`${boss.name} 将在 ${boss.alertMinutes} 分钟后刷新！`);
+        this.playAlarmSound();
     }
 
     notifyBossSpawn(boss) {
@@ -966,7 +1035,34 @@ class BossTimerApp {
                 icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgMGMtMTIuNSAwLTI1IDUuNS0yNSAyNSAwIDEyLjUgNS41IDI1IDI1IDI1czI1LTUuNSAyNS0yNSAwLTEyLjUtNS41LTI1LTI1LTI1em0wIDgwYy0xNS41IDAtMjAtLTMtMjAtMTBzNC41LTEwIDIwLTEwIDIwIDUgMjAgMTAtNC41IDEwLTIwIDEwem0tMTAtMzBjLTcgMC0xNS01LTE1LTE1czgtMTUgMTUtMTUgMTUgNSAxNSAxNS04IDE1LTE1LTE1eiIvPjxwYXRoIGQ9Ik0xMCAxMGg4MHY4MGgtODB6bTEwIDQwaDEwdjEwaC0xMHpNMzAgNDBoMTB2MTBoLTEwem0yMCA0MGgxMHYxMGgtMTB6bTIwIDQwaDEwdjEwaC0xMHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4='
             });
         }
-        this.speak(`${boss.name} 已经刷新！`);
+        this.playAlarmSound();
+    }
+
+    playAlarmSound() {
+        try {
+            if (!this.minigameAudioContext) {
+                this.minigameAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const oscillator = this.minigameAudioContext.createOscillator();
+            const gainNode = this.minigameAudioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.minigameAudioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            gainNode.gain.value = 0.3;
+            
+            oscillator.start();
+            setTimeout(() => {
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.minigameAudioContext.currentTime + 0.5);
+                setTimeout(() => {
+                    oscillator.stop();
+                }, 500);
+            }, 200);
+        } catch (error) {
+            console.log('播放声音失败:', error);
+        }
     }
 
     updateToggleLabel() {
@@ -982,9 +1078,12 @@ class BossTimerApp {
         }
         
         const nextAlarm = this.getNextMinigameAlarm();
-        const timeString = nextAlarm.toLocaleTimeString('zh-CN', {
+        // 确保使用本地时间显示，而不是UTC时间
+        const localAlarm = new Date(nextAlarm);
+        const timeString = localAlarm.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            hour12: false // 明确使用24小时制
         });
         nextAlarmDiv.textContent = `下次提醒: ${timeString}`;
     }
@@ -996,17 +1095,17 @@ class BossTimerApp {
             return;
         }
         
-        const now = new Date();
+        const now = this.getNtpTime();
         const targetTime = new Date(now);
         
-        // 设置分钟为3，秒和毫秒为0（双数小时的3分钟进场）
-        targetTime.setMinutes(3, 0, 0);
+        // 设置分钟为0，秒和毫秒为0（双数整点进场）
+        targetTime.setMinutes(0, 0, 0);
         
         // 计算当前小时
         let currentHour = targetTime.getHours();
         
         // 检查是否需要调整到下一个双数小时
-        if (now.getMinutes() > 3 || currentHour % 2 !== 0) {
+        if (now.getMinutes() > 0 || currentHour % 2 !== 0) {
             // 计算下一个双数小时
             let nextHour = currentHour + 1;
             while (nextHour % 2 !== 0) {
@@ -1028,44 +1127,35 @@ class BossTimerApp {
     }
 
     getNextMinigameAlarm() {
-        const now = new Date();
+        const now = this.getNtpTime();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
         const nextAlarm = new Date(now);
         
-        // 计算当前小时和分钟
-        let currentHour = now.getHours();
-        let currentMinute = now.getMinutes();
-        
-        // 计算下一个双数小时
-        let nextHour;
+        // 计算下一个单数整点
+        let nextSingleHour;
         if (currentHour % 2 !== 0) {
-            // 如果当前小时是单数，下一个双数小时就是当前小时+1
-            nextHour = currentHour + 1;
-        } else {
-            // 如果当前小时是双数
+            // 如果当前小时是单数
             if (currentMinute >= 57) {
-                // 如果当前分钟>=57，下一个双数小时就是当前小时+2
-                nextHour = currentHour + 2;
+                // 如果当前分钟>=57，下一个单数整点就是当前小时+2
+                nextSingleHour = currentHour + 2;
             } else {
-                // 如果当前分钟<57，下一个双数小时就是当前小时
-                nextHour = currentHour;
+                // 如果当前分钟<57，下一个单数整点就是当前小时
+                nextSingleHour = currentHour;
             }
+        } else {
+            // 如果当前小时是双数，下一个单数整点就是当前小时+1
+            nextSingleHour = currentHour + 1;
         }
         
         // 处理跨天的情况
-        if (nextHour >= 24) {
-            nextHour = nextHour - 24;
+        if (nextSingleHour >= 24) {
+            nextSingleHour = nextSingleHour - 24;
             nextAlarm.setDate(nextAlarm.getDate() + 1);
         }
         
-        // 计算提醒时间：下一个双数小时的前3分钟（即前一个小时的57分钟）
-        let alarmHour = nextHour - 1;
-        if (alarmHour < 0) {
-            alarmHour = 23;
-            nextAlarm.setDate(nextAlarm.getDate() - 1);
-        }
-        
-        // 设置提醒时间
-        nextAlarm.setHours(alarmHour, 57, 0, 0);
+        // 设置提醒时间为下一个单数整点的57分
+        nextAlarm.setHours(nextSingleHour, 57, 0, 0);
         
         return nextAlarm;
     }
@@ -1073,9 +1163,10 @@ class BossTimerApp {
     checkMinigameAlarm() {
         if (!this.minigameAlarmEnabled) return;
         
-        const now = new Date();
-        // 只在单数小时的第57分钟触发提醒（双数小时3分钟进场前3分钟）
-        // 例如：1:57提醒，2:03进场；3:57提醒，4:03进场，以此类推
+        const now = this.getNtpTime();
+        
+        // 双数整点前3分钟触发提醒（单数小时的57分钟）
+        // 例如：1:57提醒，2:00进场；3:57提醒，4:00进场，以此类推
         if (now.getMinutes() === 57 && now.getSeconds() === 0 && now.getHours() % 2 !== 0 && !this.minigameAlarmTriggered) {
             this.minigameAlarmTriggered = true;
             this.triggerMinigameAlarm();
@@ -1085,8 +1176,8 @@ class BossTimerApp {
             }, 1000);
         }
         
-        // 进场前2分钟提醒（双数小时的1分钟）
-        // 例如：2:01提醒，2:03进场；4:01提醒，4:03进场，以此类推
+        // 进场前2分钟提醒（双数整点的1分钟）
+        // 例如：2:01提醒，2:00进场；4:01提醒，4:00进场，以此类推
         if (now.getMinutes() === 1 && now.getSeconds() === 0 && now.getHours() % 2 === 0 && !this.minigameTwoMinuteAlarmTriggered) {
             this.minigameTwoMinuteAlarmTriggered = true;
             this.triggerTwoMinuteAlarm();
@@ -1101,14 +1192,14 @@ class BossTimerApp {
         this.minigameAlarmTriggered = true;
         this.minigameStartTime = Date.now();
         
-        // 使用人类语音提示：还有3分钟小游戏要开始了哦
-        this.speak('还有3分钟小游戏要开始了哦');
+        // 使用人类语音提示：小游戏还有3分钟要开始了
+        this.speak('小游戏还有3分钟要开始了');
         
         document.getElementById('minigameModal').style.display = 'flex';
         
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('小游戏即将开始', {
-                body: '还有3分钟小游戏要开始了',
+                body: '小游戏还有3分钟要开始了',
                 icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgMGMtMTIuNSAwLTI1IDUuNS0yNSAyNSAwIDEyLjUgNS41IDI1IDI1IDI1czI1LTUuNSAyNS0yNSAwLTEyLjUtNS41LTI1LTI1LTI1em0wIDgwYy0xNS41IDAtMjAtLTMtMjAtMTBzNC41LTEwIDIwLTEwIDIwIDUgMjAgMTAtNC41IDEwLTIwIDEwem0tMTAtMzBjLTcgMC0xNS01LTE1LTE1czgtMTUgMTUtMTUgMTUgNSAxNSAxNS04IDE1LTE1LTE1eiIvPjxwYXRoIGQ9Ik0xMCAxMGg4MHY4MGgtODB6bTEwIDQwaDEwdjEwaC0xMHpNMzAgNDBoMTB2MTBoLTEwem0yMCA0MGgxMHYxMGgtMTB6bTIwIDQwaDEwdjEwaC0xMHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4='
             });
         }
@@ -1129,7 +1220,7 @@ class BossTimerApp {
     }
 
     updateMinigameTime() {
-        const now = new Date();
+        const now = this.getNtpTime();
         const timeString = now.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit',
@@ -1137,9 +1228,10 @@ class BossTimerApp {
         });
         document.getElementById('minigameCurrentTime').textContent = timeString;
         
-        // 计算下一个双数小时的3分钟作为进场时间
-        const currentHour = now.getHours();
         const targetTime = new Date(now);
+        
+        // 计算下一个双数整点作为进场时间
+        const currentHour = now.getHours();
         
         // 计算下一个双数小时
         let nextHour;
@@ -1148,11 +1240,11 @@ class BossTimerApp {
             nextHour = currentHour + 1;
         } else {
             // 如果当前小时是双数
-            if (now.getMinutes() > 3) {
-                // 如果当前分钟>3，下一个双数小时就是当前小时+2
+            if (now.getMinutes() > 0) {
+                // 如果当前分钟>0，下一个双数小时就是当前小时+2
                 nextHour = currentHour + 2;
             } else {
-                // 如果当前分钟<=3，下一个双数小时就是当前小时
+                // 如果当前分钟<=0，下一个双数小时就是当前小时
                 nextHour = currentHour;
             }
         }
@@ -1163,8 +1255,8 @@ class BossTimerApp {
             targetTime.setDate(targetTime.getDate() + 1);
         }
         
-        // 设置进场时间为双数小时的3分钟
-        targetTime.setHours(nextHour, 3, 0, 0);
+        // 设置进场时间为双数整点
+        targetTime.setHours(nextHour, 0, 0, 0);
         
         const remaining = Math.max(0, targetTime - now);
         const minutes = Math.floor(remaining / (1000 * 60));
@@ -1176,6 +1268,11 @@ class BossTimerApp {
     stopMinigameAlarm() {
         document.getElementById('minigameModal').style.display = 'none';
         
+        if (this.minigameAlarmInterval) {
+            clearInterval(this.minigameAlarmInterval);
+            this.minigameAlarmInterval = null;
+        }
+        
         if (this.minigameUpdateInterval) {
             clearInterval(this.minigameUpdateInterval);
             this.minigameUpdateInterval = null;
@@ -1183,8 +1280,8 @@ class BossTimerApp {
     }
     
     triggerTwoMinuteAlarm() {
-        // 使用人类语音提示：还有2分钟进场哦
-        this.speak('还有2分钟进场哦');
+        // 使用人类语音提示：还有2分钟进场
+        this.speak('还有2分钟进场');
         
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('小游戏即将开始', {
@@ -1196,78 +1293,52 @@ class BossTimerApp {
     
     speak(text) {
         if ('speechSynthesis' in window) {
-            try {
-                // 确保语音合成引擎已经准备就绪
-                if (speechSynthesis.pending || speechSynthesis.speaking) {
-                    // 如果正在播放其他语音，等待完成后再播放
-                    setTimeout(() => this.speak(text), 500);
-                    return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.85; // 更慢的语速，使声音更温柔
+            utterance.pitch = 1.4; // 更高的音调，使声音更甜美
+            utterance.volume = 1;
+            
+            // 获取可用语音列表
+            const voices = speechSynthesis.getVoices();
+            // 优先选择温柔的女声
+            let selectedVoice = null;
+            
+            // 优先选择特定的温柔女声
+            const preferredVoices = [
+                'Microsoft Xiaoxiao Desktop - Chinese (Simplified)',
+                'Microsoft Yaoyao Desktop - Chinese (Simplified)',
+                'Microsoft Huihui Desktop - Chinese (Simplified)'
+            ];
+            
+            // 尝试匹配首选语音
+            for (const voiceName of preferredVoices) {
+                const voice = voices.find(v => v.name === voiceName);
+                if (voice) {
+                    selectedVoice = voice;
+                    break;
                 }
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'zh-CN';
-                utterance.rate = 0.8; // 更慢的语速，接近林志玲
-                utterance.pitch = 1.3; // 更高的音高，接近林志玲
-                utterance.volume = 1;
-                
-                // 尝试获取语音列表并选择中文语音
-                const voices = speechSynthesis.getVoices();
-                const zhVoices = voices.filter(voice => 
-                    voice.lang === 'zh-CN' || 
-                    voice.lang === 'zh' || 
-                    voice.name.includes('Chinese') ||
-                    voice.name.includes('中文')
-                );
-                
-                if (zhVoices.length > 0) {
-                    // 选择第一个中文语音
-                    utterance.voice = zhVoices[0];
-                }
-                
-                // 播放语音
-                speechSynthesis.speak(utterance);
-            } catch (error) {
-                console.log('语音合成失败:', error);
-                // 语音合成失败，使用回退音效
-                this.playLingZhiLingSound();
             }
-        } else {
-            // 语音合成不可用，使用回退音效
-            this.playLingZhiLingSound();
-        }
-    }
-    
-    playLingZhiLingSound() {
-        try {
-            // 创建林志玲风格的音调提示（高音调，类似林志玲的声音特点）
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             
-            // 创建一个旋律，模拟林志玲的声音特点
-            const notes = [800, 900, 1000, 900, 800]; // 高音调
-            const durations = [200, 200, 200, 200, 300];
+            // 如果没有找到首选语音，尝试查找其他中文女声
+            if (!selectedVoice) {
+                selectedVoice = voices.find(voice => 
+                    voice.lang === 'zh-CN' && 
+                    (voice.name.includes('Female') || voice.name.includes('女') || 
+                     voice.name.includes('Xiaoxiao') || voice.name.includes('Yaoyao') || voice.name.includes('Huihui'))
+                );
+            }
             
-            notes.forEach((frequency, index) => {
-                setTimeout(() => {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.value = frequency;
-                    gainNode.gain.value = 0.3;
-                    
-                    oscillator.start();
-                    setTimeout(() => {
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                        setTimeout(() => {
-                            oscillator.stop();
-                        }, 100);
-                    }, durations[index]);
-                }, index * 250);
-            });
-        } catch (error) {
-            console.log('播放回退音效失败:', error);
+            // 如果还是没有找到，使用默认的中文语音
+            if (!selectedVoice) {
+                selectedVoice = voices.find(voice => voice.lang === 'zh-CN');
+            }
+            
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+            
+            speechSynthesis.speak(utterance);
         }
     }
 }
