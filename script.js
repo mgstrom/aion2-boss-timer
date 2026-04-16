@@ -14,14 +14,12 @@ class BossTimerApp {
         this.minigameTwoMinuteAlarmTriggered = false;
         
         // NTP时间校准相关
+        this.ntpOffset = 0; // NTP时间偏移量
         this.ntpServers = [
-            'ntp.ntsc.ac.cn',  // 国家授时中心
-            'ntp.aliyun.com',   // 阿里云
-            'ntp.tencent.com'   // 腾讯云
+            'ntp.ntsc.ac.cn', // 国家授时中心
+            'ntp.aliyun.com', // 阿里云
+            'ntp.tencent.com'  // 腾讯云
         ];
-        this.ntpOffset = 0; // NTP时间与本地时间的偏移量（毫秒）
-        this.ntpLastSync = 0; // 上次同步时间
-        this.ntpSyncInterval = null; // 定期同步的定时器
         
         this.bossTemplates = [
             { name: '學者拉兀拉', respawnTime: 120 * 60 * 1000 },
@@ -53,71 +51,23 @@ class BossTimerApp {
         document.getElementById('minigameToggle').checked = this.minigameAlarmEnabled;
         this.updateToggleLabel();
         
+        // 校准NTP时间
+        this.updateNtpOffset();
+        // 每10分钟校准一次时间
+        setInterval(() => {
+            this.updateNtpOffset();
+        }, 10 * 60 * 1000);
+        
         // 检查当前时间是否符合小游戏提醒的触发条件，如果符合，就将 minigameAlarmTriggered 设置为 true
         // 这样就不会在启动时触发声音
         const now = this.getNtpTime();
-        if (now.getMinutes() === 57 && now.getSeconds() === 0 && now.getHours() % 2 === 0) {
+        if (now.getMinutes() === 57 && now.getSeconds() === 0 && now.getHours() % 2 !== 0) {
             this.minigameAlarmTriggered = true;
         }
-        
-        // 初始化NTP时间校准
-        this.syncNtpTime();
-        // 每10分钟同步一次NTP时间
-        this.ntpSyncInterval = setInterval(() => this.syncNtpTime(), 10 * 60 * 1000);
         
         this.setupBackgroundRunning();
         this.initDemoControls();
         this.initTopmostToggle();
-    }
-    
-    // 获取NTP校准后的时间
-    getNtpTime() {
-        const now = new Date();
-        return new Date(now.getTime() + this.ntpOffset);
-    }
-    
-    // 同步NTP时间
-    async syncNtpTime() {
-        try {
-            // 使用worldtimeapi.org作为时间源
-            const response = await fetch('https://worldtimeapi.org/api/ip');
-            if (response.ok) {
-                const data = await response.json();
-                const ntpTime = new Date(data.utc_datetime);
-                const localTime = new Date();
-                this.ntpOffset = ntpTime.getTime() - localTime.getTime();
-                this.ntpLastSync = localTime.getTime();
-                console.log('NTP时间同步成功，偏移量:', this.ntpOffset, '毫秒');
-            } else {
-                throw new Error('API响应失败');
-            }
-        } catch (error) {
-            console.error('NTP时间同步失败:', error);
-            // 如果API失败，尝试使用其他方法
-            this.fallbackSyncNtpTime();
-        }
-    }
-    
-    // 备用NTP时间同步方法
-    fallbackSyncNtpTime() {
-        try {
-            // 使用另一个时间API
-            fetch('https://api.timezonedb.com/v2.1/get-time-zone?key=9Z6HBNYLOP91&format=json&by=position&lat=39.9042&lng=116.4074')
-                .then(response => response.json())
-                .then(data => {
-                    const ntpTime = new Date(data.timestamp * 1000);
-                    const localTime = new Date();
-                    this.ntpOffset = ntpTime.getTime() - localTime.getTime();
-                    this.ntpLastSync = localTime.getTime();
-                    console.log('备用NTP时间同步成功，偏移量:', this.ntpOffset, '毫秒');
-                })
-                .catch(error => {
-                    console.error('备用NTP时间同步失败:', error);
-                    // 如果所有方法都失败，保持使用本地时间
-                });
-        } catch (error) {
-            console.error('备用NTP时间同步失败:', error);
-        }
     }
     
     initTopmostToggle() {
@@ -580,7 +530,6 @@ class BossTimerApp {
         }
         
         const respawnTime = (hours * 60 * 60 + minutes * 60 + seconds) * 1000;
-        const now = this.getNtpTime().getTime();
         
         // 检查是否已存在同名 BOSS
         const existingBoss = this.bosses.find(boss => boss.name === bossName);
@@ -588,9 +537,9 @@ class BossTimerApp {
         if (existingBoss) {
             // 更新现有 BOSS 的计时时间
             existingBoss.respawnTime = respawnTime;
-            existingBoss.nextSpawn = now + respawnTime;
+            existingBoss.nextSpawn = Date.now() + respawnTime;
             existingBoss.justRespawned = false;
-            existingBoss.lastUpdated = now;
+            existingBoss.lastUpdated = Date.now();
             existingBoss.updateType = updateType;
             this.alertTriggered.delete(existingBoss.id);
             
@@ -599,14 +548,14 @@ class BossTimerApp {
         } else {
             // 添加新的 BOSS
             const boss = {
-                id: now,
+                id: Date.now(),
                 name: bossName,
                 respawnTime: respawnTime,
-                nextSpawn: now + respawnTime,
+                nextSpawn: Date.now() + respawnTime,
                 alertEnabled: true,
                 alertMinutes: 5,
                 justRespawned: false,
-                lastUpdated: now,
+                lastUpdated: Date.now(),
                 updateType: updateType
             };
             this.bosses.push(boss);
@@ -731,15 +680,22 @@ class BossTimerApp {
 
 
     updateCurrentTime() {
-        const now = this.getNtpTime();
-        const timeString = now.toLocaleTimeString('zh-CN', {
+        // 小游戏时间使用校准后的NTP时间
+        const ntpNow = this.getNtpTime();
+        const timeString = ntpNow.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit'
         });
         document.getElementById('currentTime').textContent = timeString;
+        
+        // Boss倒计时使用系统时间，不需要校准
         this.updateBossCountdowns();
+        
+        // 小游戏闹钟检查使用校准后的NTP时间
         this.checkMinigameAlarm();
+        
+        // 小游戏进场倒计时使用校准后的NTP时间
         this.updateNextEntryCountdown();
     }
 
@@ -751,12 +707,11 @@ class BossTimerApp {
         const bossTemplate = this.bossTemplates.find(b => b.name === bossName);
         if (!bossTemplate) return;
         
-        const now = this.getNtpTime().getTime();
         const boss = {
-            id: now,
+            id: Date.now(),
             name: bossName,
             respawnTime: bossTemplate.respawnTime,
-            nextSpawn: now + bossTemplate.respawnTime,
+            nextSpawn: Date.now() + bossTemplate.respawnTime,
             alertEnabled: true,
             alertMinutes: 5,
             justRespawned: false
@@ -853,7 +808,7 @@ class BossTimerApp {
     }
 
     updateBossCountdowns() {
-        const now = this.getNtpTime().getTime();
+        const now = Date.now();
         
         this.bosses.forEach(boss => {
             const timeLeft = boss.nextSpawn - now;
@@ -1095,6 +1050,7 @@ class BossTimerApp {
             return;
         }
         
+        // 使用校准后的NTP时间
         const now = this.getNtpTime();
         const targetTime = new Date(now);
         
@@ -1127,6 +1083,7 @@ class BossTimerApp {
     }
 
     getNextMinigameAlarm() {
+        // 使用校准后的NTP时间
         const now = this.getNtpTime();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
@@ -1163,6 +1120,7 @@ class BossTimerApp {
     checkMinigameAlarm() {
         if (!this.minigameAlarmEnabled) return;
         
+        // 使用校准后的NTP时间
         const now = this.getNtpTime();
         
         // 双数整点前3分钟触发提醒（单数小时的57分钟）
@@ -1220,6 +1178,7 @@ class BossTimerApp {
     }
 
     updateMinigameTime() {
+        // 使用校准后的NTP时间
         const now = this.getNtpTime();
         const timeString = now.toLocaleTimeString('zh-CN', {
             hour: '2-digit',
@@ -1340,6 +1299,71 @@ class BossTimerApp {
             
             speechSynthesis.speak(utterance);
         }
+    }
+    
+    // 获取校准后的NTP时间
+    getNtpTime() {
+        const now = new Date();
+        return new Date(now.getTime() + this.ntpOffset);
+    }
+    
+    // 从NTP服务器获取时间并计算偏移量
+    async updateNtpOffset() {
+        for (const server of this.ntpServers) {
+            try {
+                const offset = await this.getNtpOffsetFromServer(server);
+                if (offset !== null) {
+                    this.ntpOffset = offset;
+                    console.log(`NTP time synchronized with ${server}, offset: ${offset}ms`);
+                    return;
+                }
+            } catch (error) {
+                console.error(`Failed to synchronize with ${server}:`, error);
+            }
+        }
+        console.error('Failed to synchronize with any NTP server, using system time');
+    }
+    
+    // 从单个NTP服务器获取时间偏移量
+    getNtpOffsetFromServer(server) {
+        return new Promise((resolve, reject) => {
+            const client = new XMLHttpRequest();
+            const startTime = Date.now();
+            
+            client.open('GET', `https://${server}`, true);
+            client.onreadystatechange = () => {
+                if (client.readyState === 4) {
+                    if (client.status === 200) {
+                        const endTime = Date.now();
+                        const responseTime = (endTime - startTime) / 2; // 假设往返时间相等
+                        
+                        // 从响应头获取服务器时间
+                        const dateHeader = client.getResponseHeader('Date');
+                        if (dateHeader) {
+                            const serverTime = new Date(dateHeader).getTime();
+                            const clientTime = Date.now();
+                            const offset = serverTime - (clientTime - responseTime);
+                            resolve(offset);
+                        } else {
+                            resolve(null);
+                        }
+                    } else {
+                        resolve(null);
+                    }
+                }
+            };
+            
+            client.onerror = () => {
+                resolve(null);
+            };
+            
+            client.timeout = 3000;
+            client.ontimeout = () => {
+                resolve(null);
+            };
+            
+            client.send();
+        });
     }
 }
 
