@@ -1116,14 +1116,13 @@ class BossTimerApp {
             nextSingleHour = currentHour + 1;
         }
         
-        // 处理跨天的情况
-        if (nextSingleHour >= 24) {
-            nextSingleHour = nextSingleHour - 24;
-            nextAlarm.setDate(nextAlarm.getDate() + 1);
-        }
-        
         // 设置提醒时间为下一个单数整点的57分
         nextAlarm.setHours(nextSingleHour, 57, 0, 0);
+        
+        // 如果设置的时间已经过期（早于当前时间），则加一天
+        if (nextAlarm <= now) {
+            nextAlarm.setDate(nextAlarm.getDate() + 1);
+        }
         
         return nextAlarm;
     }
