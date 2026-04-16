@@ -1052,34 +1052,45 @@ class BossTimerApp {
         
         // 使用校准后的NTP时间
         const now = this.getNtpTime();
-        const targetTime = new Date(now);
         
-        // 设置分钟为0，秒和毫秒为0（双数整点进场）
-        targetTime.setMinutes(0, 0, 0);
+        // 计算当前小时和分钟
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
         
-        // 计算当前小时
-        let currentHour = targetTime.getHours();
-        
-        // 检查是否需要调整到下一个双数小时
-        if (now.getMinutes() > 0 || currentHour % 2 !== 0) {
+        // 检查当前是否处于双数整点的0-3分钟内（最后进场阶段）
+        if (currentHour % 2 === 0 && currentMinute >= 0 && currentMinute < 3) {
+            // 最后进场倒计时：双数整点的3分钟
+            const endEntryTime = new Date(now);
+            endEntryTime.setHours(currentHour, 3, 0, 0);
+            
+            const remaining = Math.max(0, endEntryTime - now);
+            const minutes = Math.floor(remaining / (1000 * 60));
+            const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+            const countdownString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            entryCountdownDiv.textContent = `最后进场倒计时: ${countdownString}`;
+        } else {
             // 计算下一个双数小时
             let nextHour = currentHour + 1;
             while (nextHour % 2 !== 0) {
                 nextHour++;
             }
+            
             // 处理跨天的情况
+            const nextGameTime = new Date(now);
             if (nextHour >= 24) {
                 nextHour = 0;
-                targetTime.setDate(targetTime.getDate() + 1);
+                nextGameTime.setDate(nextGameTime.getDate() + 1);
             }
-            targetTime.setHours(nextHour);
+            
+            // 开场倒计时：下一个双数整点的0分
+            nextGameTime.setHours(nextHour, 0, 0, 0);
+            
+            const remaining = Math.max(0, nextGameTime - now);
+            const minutes = Math.floor(remaining / (1000 * 60));
+            const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+            const countdownString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            entryCountdownDiv.textContent = `开场倒计时: ${countdownString}`;
         }
-        
-        const remaining = Math.max(0, targetTime - now);
-        const minutes = Math.floor(remaining / (1000 * 60));
-        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-        const countdownString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        entryCountdownDiv.textContent = `下次进场倒计时: ${countdownString}`;
     }
 
     getNextMinigameAlarm() {
@@ -1123,8 +1134,7 @@ class BossTimerApp {
         // 使用校准后的NTP时间
         const now = this.getNtpTime();
         
-        // 双数整点前3分钟触发提醒（单数小时的57分钟）
-        // 例如：1:57提醒，2:00进场；3:57提醒，4:00进场，以此类推
+        // 进场前3分钟（单数小时的57分钟）：提醒"小游戏还有3分钟要开始了"
         if (now.getMinutes() === 57 && now.getSeconds() === 0 && now.getHours() % 2 !== 0 && !this.minigameAlarmTriggered) {
             this.minigameAlarmTriggered = true;
             this.triggerMinigameAlarm();
@@ -1134,8 +1144,7 @@ class BossTimerApp {
             }, 1000);
         }
         
-        // 进场前2分钟提醒（双数整点的1分钟）
-        // 例如：2:01提醒，2:00进场；4:01提醒，4:00进场，以此类推
+        // 结束前2分钟（双数整点的1分钟）：提醒"还有2分钟进场"
         if (now.getMinutes() === 1 && now.getSeconds() === 0 && now.getHours() % 2 === 0 && !this.minigameTwoMinuteAlarmTriggered) {
             this.minigameTwoMinuteAlarmTriggered = true;
             this.triggerTwoMinuteAlarm();
@@ -1189,33 +1198,30 @@ class BossTimerApp {
         
         const targetTime = new Date(now);
         
-        // 计算下一个双数整点作为进场时间
+        // 计算当前小时和分钟
         const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
         
-        // 计算下一个双数小时
-        let nextHour;
-        if (currentHour % 2 !== 0) {
-            // 如果当前小时是单数，下一个双数小时就是当前小时+1
-            nextHour = currentHour + 1;
+        // 检查当前是否处于双数整点的0-3分钟内（最后进场阶段）
+        if (currentHour % 2 === 0 && currentMinute >= 0 && currentMinute < 3) {
+            // 最后进场倒计时：双数整点的3分钟
+            targetTime.setHours(currentHour, 3, 0, 0);
         } else {
-            // 如果当前小时是双数
-            if (now.getMinutes() > 0) {
-                // 如果当前分钟>0，下一个双数小时就是当前小时+2
-                nextHour = currentHour + 2;
-            } else {
-                // 如果当前分钟<=0，下一个双数小时就是当前小时
-                nextHour = currentHour;
+            // 计算下一个双数小时
+            let nextHour = currentHour + 1;
+            while (nextHour % 2 !== 0) {
+                nextHour++;
             }
+            
+            // 处理跨天的情况
+            if (nextHour >= 24) {
+                nextHour = 0;
+                targetTime.setDate(targetTime.getDate() + 1);
+            }
+            
+            // 开场倒计时：下一个双数整点的0分
+            targetTime.setHours(nextHour, 0, 0, 0);
         }
-        
-        // 处理跨天的情况
-        if (nextHour >= 24) {
-            nextHour = nextHour - 24;
-            targetTime.setDate(targetTime.getDate() + 1);
-        }
-        
-        // 设置进场时间为双数整点
-        targetTime.setHours(nextHour, 0, 0, 0);
         
         const remaining = Math.max(0, targetTime - now);
         const minutes = Math.floor(remaining / (1000 * 60));
